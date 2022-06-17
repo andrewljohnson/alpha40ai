@@ -23,10 +23,10 @@ class Game {
 
    int turn = 0;
 
-   public:
-
    // a vector of players in the game
    vector< Player > players;
+
+   public:
 
    void addPlayer (Player p) {
       players.push_back(p);
