@@ -11,40 +11,43 @@
 
 class Game {
 
-   // the index of the player that currently has priority
+   // the index of the player that currently has priority to play moves
    int indexOfPlayerWithPriority = 0;
 
    // each new card created in a game has a sequential ID
    int lastCardId = 0;
 
-   // the max number of cards a player can have
+   // the max number of cards a player can have at the end of a turn
    int maxHandSize = 7;
 
+   // the current turn, which consists of a series of steps 
    int turn = 0;
 
-   // a vector of players in the game
-   vector< Player > players;
-
+   // the current step in a turn
    game_step gameStep = main_first; 
+
+   // a vector of players in the game
+   vector<Player*> players;
+
 
 
    public:
 
-   void addPlayer (Player p) {
+   void addPlayer (Player* p) {
       players.push_back(p);
    }   
 
-   void addCardToLibraryForPlayerAtIndex (Card c, int index) {
-      Player& p = players[index];
-      c.id = lastCardId;
+   void addCardToLibraryForPlayerAtIndex (Card* c, int index) {
+      Player* p = players[index];
+      c->id = lastCardId;
       lastCardId++;
-      p.addCardToLibrary(c);
+      p->addCardToLibrary(c);
       // cout << "Added a " << c.name << " (" << c.cardType << ") to " << p.username() << "'s library.\n"; 
    }   
 
    void drawCardForPlayerAtIndex (int index) {
-      Player& p = players[index];
-      p.drawCard();
+      Player* p = players[index];
+      p->drawCard();
    }   
 
    void makeDecks() {
@@ -65,34 +68,38 @@ class Game {
 
    void printGameStatus() {
       for (int x=0; x < players.size(); x++) {
-         cout << players[x].username() << " has " << players[x].librarySize() << " cards in library";
-         cout << ", " << players[x].inPlaySize() << " cards in play";
-         cout << " and " << players[x].handSize() << " cards in hand.\n";
+         Player* p = players[x];
+         cout << p->username() << " has " << p->librarySize() << " cards in library";
+         cout << ", " << p->inPlaySize() << " cards in play";
+         cout << " and " << p->handSize() << " cards in hand.\n";
       }
       cout << "Valid moves are: ";
-      for (Move move: validMoves())
-         cout << "(" << move.moveType << ", " << move.cardId << ", " << move.playerId << "), ";
+      for (Move* move: validMoves())
+         cout << "(" << move->moveType << ", " << move->cardId << ", " << move->playerId << "), ";
       cout << "\n";
 
 
    }
 
-   vector< Move > validMoves() {
-      if (turnPlayer().id() != playerWithPriority().id()) {
-         vector< Move > moves;
-         moves.push_back((struct Move){.moveType = pass, .playerId = playerWithPriority().id()});         
+   vector< Move* > validMoves() {
+      if (turnPlayer()->id() != playerWithPriority()->id()) {
+         vector< Move* > moves;
+         Move* move = new Move();
+         move->moveType = pass;
+         move->playerId = playerWithPriority()->id();
+         moves.push_back(move);
          return moves;
       }
-      Player p = players[indexOfPlayerWithPriority];
-      return p.validMoves();
+      Player* p = players[indexOfPlayerWithPriority];
+      return p->validMoves();
 
    }
 
-   Player& playerWithPriority() {
+   Player* playerWithPriority() {
       return players[indexOfPlayerWithPriority];
    }
 
-   Player& turnPlayer() {
+   Player* turnPlayer() {
       if( turn % 2 == 0) return players[0];
       return players[1];
    }
@@ -104,23 +111,23 @@ class Game {
       } else indexOfPlayerWithPriority = 0;      
    }
 
-   void playMove(Move move) {
-      if (move.moveType == pass) {
+   void playMove(Move* move) {
+      if (move->moveType == pass) {
          passPriority();
 
          if (gameStep == main_first) {
-            if(turnPlayer().id() == playerWithPriority().id()) {
+            if(turnPlayer()->id() == playerWithPriority()->id()) {
                gameStep = end_step;               
             }
          }
          if (gameStep == end_step) {
-            if(turnPlayer().id() == playerWithPriority().id()) {
+            if(turnPlayer()->id() == playerWithPriority()->id()) {
                passPriority();
                gameStep = draw_step;                   
-               turnPlayer().resetLandsPlayedThisTurn();
+               turnPlayer()->resetLandsPlayedThisTurn();
                turn += 1;                          
-               playerWithPriority().drawCard();
-               if (playerWithPriority().didDrawFromEmptyLibrary()) {
+               playerWithPriority()->drawCard();
+               if (playerWithPriority()->didDrawFromEmptyLibrary()) {
                   return;
                }
                gameStep = main_first;                   
@@ -129,21 +136,21 @@ class Game {
          return;
       }
 
-      playerWithPriority().playMove(move);
+      playerWithPriority()->playMove(move);
    }
 
    void playRandomMove() {
-      vector< Move > moves = validMoves();
+      vector< Move* > moves = validMoves();
       // use arc4random() instead if we want to change the seed each run on Mac 
       // playMove(moves[rand() % moves. size()]);
       playMove(moves[0]);
    }
 
    bool isOver() {
-      if (players[0].getLife() <= 0) return true;
-      if (players[1].getLife() <= 0) return true;
-      if (players[0].didDrawFromEmptyLibrary()) return true;
-      if (players[1].didDrawFromEmptyLibrary()) return true;
+      if (players[0]->getLife() <= 0) return true;
+      if (players[1]->getLife() <= 0) return true;
+      if (players[0]->didDrawFromEmptyLibrary()) return true;
+      if (players[1]->didDrawFromEmptyLibrary()) return true;
       return false;
    }
 };
@@ -151,8 +158,8 @@ class Game {
 
 int main() {
    Game game;
-   game.addPlayer(Player(0, "Spike"));
-   game.addPlayer(Player(1, "Lee"));
+   game.addPlayer(new Player(0, "Spike"));
+   game.addPlayer(new Player(1, "Lee"));
    game.makeDecks();
    game.drawOpeningHands();
    game.printGameStatus();

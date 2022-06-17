@@ -6,9 +6,9 @@
 
 
 class Player {
-   vector< Card > hand;
-   vector< Card > library;
-   vector< Card > inPlay;
+   vector< Card* > hand;
+   vector< Card* > library;
+   vector< Card* > inPlay;
 
    int id_;
    string username_;
@@ -25,7 +25,7 @@ class Player {
       username_ = playerUsername;
    }
 
-   void addCardToLibrary (Card c) {
+   void addCardToLibrary (Card* c) {
       library.push_back(c);
    }
 
@@ -59,33 +59,40 @@ class Player {
       return drewFromEmptyLibrary;      
    }
 
-   vector< Move > validMoves() {
-      vector< Move > moves;
+   vector< Move* > validMoves() {
+      vector< Move* > moves;
 
       // playable land moves
       for (int x=0;x<hand.size();x++) {
-         Card& card = hand[x];
-         if (card.cardType == Land && landsPlayedThisTurn < landsPlayableThisTurn) {
-            moves.push_back((struct Move){.moveType = select_card, .cardId = card.id, .playerId = id_});
+         Card* card = hand[x];
+            if (card->cardType == Land && landsPlayedThisTurn < landsPlayableThisTurn) {
+            Move* move = new Move();
+            move->moveType = select_card;
+            move->cardId = card->id;
+            move->playerId = id_;
+            moves.push_back(move);
          }
       }
-      moves.push_back((struct Move){.moveType = pass, .playerId = id_});
+      Move* move = new Move();
+      move->moveType = pass;
+      move->playerId = id_;
+      moves.push_back(move);
       return moves;
    }
 
-   void playMove(Move move) {
-      if (move.moveType == select_card) {
+   void playMove(Move* move) {
+      if (move->moveType == select_card) {
          int cardIndex = 0;
          for(int x=0;x<hand.size();x++) {
-            if (hand[x].id == move.cardId) {
+            if (hand[x]->id == move->cardId) {
                cardIndex = x;
                break;
             }
          }
-         Card c = hand[cardIndex];
+         Card* c = hand[cardIndex];
          inPlay.push_back(c);
          hand.erase(hand.begin() + cardIndex);
-         if (c.cardType == Land) {
+         if (c->cardType == Land) {
             landsPlayedThisTurn++;
          }
          return;
