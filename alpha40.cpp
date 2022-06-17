@@ -10,6 +10,7 @@
 
 
 class Game {
+
    // the index of the player that currently has priority
    int indexOfPlayerWithPriority = 0;
 
@@ -19,12 +20,13 @@ class Game {
    // the max number of cards a player can have
    int maxHandSize = 7;
 
-   game_step gameStep = main_first; 
-
    int turn = 0;
 
    // a vector of players in the game
    vector< Player > players;
+
+   game_step gameStep = main_first; 
+
 
    public:
 
@@ -76,9 +78,9 @@ class Game {
    }
 
    vector< Move > validMoves() {
-      if (turnPlayer().id() != currentPlayer().id()) {
+      if (turnPlayer().id() != playerWithPriority().id()) {
          vector< Move > moves;
-         moves.push_back((struct Move){.moveType = pass, .playerId = currentPlayer().id()});         
+         moves.push_back((struct Move){.moveType = pass, .playerId = playerWithPriority().id()});         
          return moves;
       }
       Player p = players[indexOfPlayerWithPriority];
@@ -86,7 +88,7 @@ class Game {
 
    }
 
-   Player& currentPlayer() {
+   Player& playerWithPriority() {
       return players[indexOfPlayerWithPriority];
    }
 
@@ -107,18 +109,18 @@ class Game {
          passPriority();
 
          if (gameStep == main_first) {
-            if(turnPlayer().id() == currentPlayer().id()) {
+            if(turnPlayer().id() == playerWithPriority().id()) {
                gameStep = end_step;               
             }
          }
          if (gameStep == end_step) {
-            if(turnPlayer().id() == currentPlayer().id()) {
+            if(turnPlayer().id() == playerWithPriority().id()) {
                passPriority();
                gameStep = draw_step;                   
                turnPlayer().resetLandsPlayedThisTurn();
                turn += 1;                          
-               currentPlayer().drawCard();
-               if (currentPlayer().didDrawFromEmptyLibrary()) {
+               playerWithPriority().drawCard();
+               if (playerWithPriority().didDrawFromEmptyLibrary()) {
                   return;
                }
                gameStep = main_first;                   
@@ -127,7 +129,7 @@ class Game {
          return;
       }
 
-      currentPlayer().playMove(move);
+      playerWithPriority().playMove(move);
    }
 
    void playRandomMove() {
