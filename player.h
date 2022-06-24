@@ -1,108 +1,50 @@
-#include <vector>
+#ifndef PLAYER_H
+#define PLAYER_H
+
 #include <string>
-#include "enums.h"
-#include "card.h"
-#include "move.h"
+#include <map>
+#include <vector>
+using namespace std;
+class Card;
+class Move;
+enum mana_type :  int;
 
 
-class Player {
-   vector< Card* > hand;
-   vector< Card* > library;
-   vector< Card* > inPlay;
-
+class Player
+{
+   private:
    int id_;
    string username_;
-   int life = 20;
-   bool drewFromEmptyLibrary = false;
-   int landsPlayableThisTurn = 1;
-   int landsPlayedThisTurn = 0;
+
+   vector<Card*> hand_;
+   vector<Card*> library_;
+   vector<Card*> inPlay_;
+   int life_;
+
+   bool drewFromEmptyLibrary_;
+   int landsPlayableThisTurn_;
+   int landsPlayedThisTurn_;
+   bool canAffordManaCost(map<mana_type, int> manaCost);
+
 
    public:
-   int id() const { return id_; }
-   string username() const { return username_; }
-   Player(int playerId, string playerUsername) {
-      id_ = playerId;
-      username_ = playerUsername;
-   }
+   Player(int playerId, string playerUsername);
+   string username();
+   int id();
+   int life();
+   void addCardToLibrary (Card* c);
+   void playMove(Move* move, vector<Player*>players);
+   int didDrawFromEmptyLibrary();
+   void drawCard ();
+   void resetLandsPlayedThisTurn();
+   void untapPermanents();
+   void decrementLife(int life);
+   vector<Card*> inPlay();
+   vector<Card*> hand();
+   vector<Card*> library();
+   int landsPlayableThisTurn()  { return landsPlayableThisTurn_; }
+   int landsPlayedThisTurn()  { return landsPlayedThisTurn_; }
+   bool canAffordAndTarget(Card* card);
+}; 
 
-   void addCardToLibrary (Card* c) {
-      library.push_back(c);
-   }
-
-   void drawCard () {
-      if (library.size() == 0) {
-         drewFromEmptyLibrary = true;
-         return;
-      }
-      hand.push_back(library.back());
-      library.pop_back();
-      // cout << username_ << " drew a card.\n"; 
-   }
-
-   int librarySize() {
-      return library.size();
-   }
-
-   int handSize() {
-      return hand.size();      
-   }
-
-   int inPlaySize() {
-      return inPlay.size();      
-   }
-
-   int getLife() {
-      return life;      
-   }
-
-   int didDrawFromEmptyLibrary() {
-      return drewFromEmptyLibrary;      
-   }
-
-   vector< Move* > validMoves() {
-      vector< Move* > moves;
-
-      // playable land moves
-      for (int x=0;x<hand.size();x++) {
-         Card* card = hand[x];
-            if (card->cardType == Land && landsPlayedThisTurn < landsPlayableThisTurn) {
-            Move* move = new Move();
-            move->moveType = select_card;
-            move->cardId = card->id;
-            move->playerId = id_;
-            moves.push_back(move);
-         }
-      }
-      Move* move = new Move();
-      move->moveType = pass;
-      move->playerId = id_;
-      moves.push_back(move);
-      return moves;
-   }
-
-   void playMove(Move* move) {
-      if (move->moveType == select_card) {
-         int cardIndex = 0;
-         for(int x=0;x<hand.size();x++) {
-            if (hand[x]->id == move->cardId) {
-               cardIndex = x;
-               break;
-            }
-         }
-         Card* c = hand[cardIndex];
-         inPlay.push_back(c);
-         hand.erase(hand.begin() + cardIndex);
-         if (c->cardType == Land) {
-            landsPlayedThisTurn++;
-         }
-         return;
-      }
-   }
-
-   void resetLandsPlayedThisTurn() {
-      landsPlayedThisTurn = 0;
-   }
-
-};
-
-
+#endif
