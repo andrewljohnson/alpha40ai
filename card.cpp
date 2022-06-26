@@ -5,6 +5,17 @@
 #include <iostream>
 using namespace std;
 
+
+// Current Cards
+// Mountain
+// Lightning Bolt
+// Grizzly Bear
+
+// Future Cards
+// Forest
+// Giant Growth, Earthquake
+// Kird Ape, Granite Gargoyle, Llanowar Elf, 
+
 void doManaEffect(Move* m, Card* card, Effect* effect, vector<Player*>players) { 
    // add mana to a player's pool
    // do Effect e for Card c based on TargetInfo t 

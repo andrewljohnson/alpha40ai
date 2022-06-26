@@ -11,6 +11,13 @@ public:
    int cardId;
    int targetId;
    target_type targetType;
+
+   Move(move_type mtype, int cid, int pid) {
+      moveType = mtype;
+      cardId = cid;
+      playerId = pid;
+   }
+
 };
 
 

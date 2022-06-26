@@ -7,17 +7,6 @@
 #include <iostream>
 using namespace std;
 
-// Current Cards
-// Mountain
-// Lightning Bolt
-// Grizzly Bear
-
-// Future Cards
-// Forest
-// Giant Growth, Earthquake
-// Kird Ape, Granite Gargoyle, Llanowar Elf, 
-
-
 class Game {
 
    // the index of the player that currently has priority to play moves
@@ -113,11 +102,10 @@ class Game {
                if (cardNamesWithMoves[card->name]) {
                   continue;
                }
-               if (card->cardType == Land && p->landsPlayedThisTurn() < p->landsPlayableThisTurn()) {
-                  Move* move = new Move();
-                  move->moveType = select_card;
-                  move->cardId = card->id;
-                  move->playerId = p->id();
+               bool isPlayableLand = card->cardType == Land && p->landsPlayedThisTurn() < p->landsPlayableThisTurn();
+               bool isPlayableCreature = card->cardType == Creature && p->canAffordManaCost(card->manaCost);
+               if (isPlayableLand || isPlayableCreature) {
+                  Move* move = new Move(select_card, card->id, p->id());
                   cardNamesWithMoves[card->name] = true;
                   moves.push_back(move);
                }
@@ -130,31 +118,16 @@ class Game {
          if (cardNamesWithMoves[card->name]) {
             continue;
          }
-         // creatures
-         if (card->cardType == Creature && p->canAffordManaCost(card->manaCost)) {
-            Move* move = new Move();
-            move->moveType = select_card;
-            move->cardId = card->id;
-            move->playerId = p->id();
-            cardNamesWithMoves[card->name] = true;
-            moves.push_back(move);
-         }
          // instants
          if (card->cardType == Instant && p->canAffordAndTarget(card)) {
             cardNamesWithMoves[card->name] = true;
             if (card->effects[0]->targetType == any_player_or_creature) {
-               Move* moveSelf = new Move();
-               moveSelf->moveType = select_card_with_targets;
-               moveSelf->cardId = card->id;
-               moveSelf->playerId = p->id();
+               Move* moveSelf = new Move(select_card_with_targets, card->id, p->id());
                moveSelf->targetId = playerWithPriority()->id(); 
                moveSelf->targetType = player; 
                moves.push_back(moveSelf);
 
-               Move* moveOpponent = new Move();
-               moveOpponent->moveType = select_card_with_targets;
-               moveOpponent->cardId = card->id;
-               moveOpponent->playerId = p->id();
+               Move* moveOpponent = new Move(select_card_with_targets, card->id, p->id());
                moveOpponent->targetId = playerWithoutPriority()->id(); 
                moveOpponent->targetType = player; 
                moves.push_back(moveOpponent);
@@ -164,10 +137,7 @@ class Game {
                      if (permanent->cardType != Creature) {
                         continue;
                      }
-                     Move* moveCreature = new Move();
-                     moveCreature->moveType = select_card_with_targets;
-                     moveCreature->cardId = card->id;
-                     moveCreature->playerId = p->id();
+                     Move* moveCreature = new Move(select_card_with_targets, card->id, p->id());
                      moveCreature->targetId = permanent->id; 
                      moveCreature->targetType = creature; 
                      moves.push_back(moveCreature);
@@ -179,12 +149,9 @@ class Game {
       }
 
       // default pass move
-      Move* move = new Move();
-      move->moveType = pass;
-      move->playerId = p->id();
+      Move* move = new Move(pass, 0, p->id());
       moves.push_back(move);
       return moves;
-   
    }
 
    Player* playerWithPriority() {
@@ -261,7 +228,7 @@ int main() {
    game.drawOpeningHands();
    game.printGameStatus();
    
-   int movesToPlay = 10;
+   int movesToPlay = 20;
    int i = 0;
    while (!game.isOver()) {
       game.playRandomMove();
@@ -269,6 +236,7 @@ int main() {
          game.printGameStatus();
          cout << "GAME OVER";
       } else {
+         game.printGameStatus();
       }
       i++;
       if (i >= movesToPlay) {
