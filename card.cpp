@@ -5,16 +5,16 @@
 #include <iostream>
 using namespace std;
 
-void Card::doManaEffect(Move* m, Effect* effect, vector<Player*>players) { 
+void doManaEffect(Move* m, Card* card, Effect* effect, vector<Player*>players) { 
    // add mana to a player's pool
    // do Effect e for Card c based on TargetInfo t 
 }
 
-void Card::doDamageEffect(Move* m, Effect* effect, vector<Player*>players) {
+void doDamageEffect(Move* m, Card* card, Effect* effect, vector<Player*>players) {
    if (m->targetType == player) {
       for (Player* p: players) {
          if (p->id() == m->targetId) {
-            cout << name << " deals " << effect->amount << ".\n";
+            cout << card->name << " deals " << effect->amount << ".\n";
             p->decrementLife(effect->amount);
          }
       } 
@@ -41,7 +41,7 @@ Card* Card::mountain() {
    mManaEffect->targetType = self;
    mManaEffect->trigger = count_mana;
    m->effects.push_back(mManaEffect);
-   m->activatedEffectDefs.push_back(Card::doManaEffect);
+   m->activatedEffectDefs.push_back(doManaEffect);
    return m;
 };
 
@@ -56,7 +56,7 @@ Card* Card::forest() {
    mManaEffect->targetType = self;
    mManaEffect->trigger = count_mana;
    m->effects.push_back(mManaEffect);
-   m->activatedEffectDefs.push_back(Card::doManaEffect);
+   m->activatedEffectDefs.push_back(doManaEffect);
    return m;
 };
 
@@ -87,6 +87,6 @@ Card* Card::lightning_bolt() {
    damageEffect->targetType = any_player_or_creature;
    damageEffect->trigger = cast_this;
    bolt->effects.push_back(damageEffect);
-   bolt->castSpellEffectDefs.push_back(Card::doDamageEffect);
+   bolt->castSpellEffectDefs.push_back(doDamageEffect);
    return bolt;
 };

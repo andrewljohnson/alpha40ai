@@ -18,31 +18,6 @@ using namespace std;
 // Kird Ape, Granite Gargoyle, Llanowar Elf, 
 
 
-ostream& operator<<(ostream& out, const card_type value){
-    const char* s = 0;
-#define PROCESS_VAL(p) case(p): s = #p; break;
-    switch(value){
-        PROCESS_VAL(Creature);     
-        PROCESS_VAL(Instant);     
-        PROCESS_VAL(Land);     
-    }
-#undef PROCESS_VAL
-    return out << s;
-}
-
-ostream& operator<<(ostream& out, const move_type value){
-    const char* s = 0;
-#define PROCESS_VAL(p) case(p): s = #p; break;
-    switch(value){
-        PROCESS_VAL(pass);     
-        PROCESS_VAL(select_card);     
-        PROCESS_VAL(select_card_with_targets);     
-    }
-#undef PROCESS_VAL
-    return out << s;
-}
-
-
 class Game {
 
    // the index of the player that currently has priority to play moves
@@ -62,7 +37,6 @@ class Game {
 
    // a vector of players in the game
    vector<Player*> players_;
-
 
 
    public:
@@ -292,9 +266,9 @@ int main() {
    while (!game.isOver()) {
       game.playRandomMove();
       if (game.isOver()) {
+         game.printGameStatus();
          cout << "GAME OVER";
       } else {
-         game.printGameStatus();
       }
       i++;
       if (i >= movesToPlay) {

@@ -1,6 +1,7 @@
 #ifndef CARD_H
 #define CARD_H
 
+class Card;
 class Move;
 class Player;
 #include <map>
@@ -29,7 +30,7 @@ struct Effect {
 };       
 
 // map all of a Card's Effects into functions of this signature when cards are instantiated for a deck 
-typedef void (*EffectDef) (Move* m, Effect* effect, vector<Player*>players); 
+typedef void (*EffectDef) (Move* m, Card* card, Effect* effect, vector<Player*>players); 
 
 
 class Card {             
@@ -51,8 +52,6 @@ class Card {
   static Card* lightning_bolt();
   static Card* forest();
   static Card* mountain();
-  static void doManaEffect(Move* m, Effect* effect, vector<Player*>players);
-  static void doDamageEffect(Move* m, Effect* effect, vector<Player*>players);
 };       
 
 

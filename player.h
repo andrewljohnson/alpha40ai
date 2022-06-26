@@ -5,10 +5,10 @@
 #include <map>
 #include <vector>
 using namespace std;
+
 class Card;
 class Move;
 enum mana_type :  int;
-
 
 class Player {
    private:
@@ -50,5 +50,6 @@ class Player {
    void payMana(map<mana_type, int> manaCost);
 
 }; 
+
 
 #endif

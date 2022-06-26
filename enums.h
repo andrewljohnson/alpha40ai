@@ -1,6 +1,9 @@
 #ifndef ENUMS_H
 #define ENUMS_H
 
+#include <iostream>
+using namespace std;
+
 enum card_name : int  {
    Forest,
    GrizzlyBear,
@@ -52,5 +55,10 @@ enum mana_type : int  {
    white,
    black,
 };
+
+ostream& operator<<(ostream& out, const card_name value);
+ostream& operator<<(ostream& out, const mana_type value);
+ostream& operator<<(ostream& out, const card_type value);
+ostream& operator<<(ostream& out, const move_type value);
 
 #endif

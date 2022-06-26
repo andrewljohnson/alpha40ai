@@ -2,38 +2,7 @@
 #include "move.h"
 #include "card.h"
 #include "enums.h"
-#include <iostream>
 using namespace std;
-
-
-// https://stackoverflow.com/questions/3342726/c-print-out-enum-value-as-text
-ostream& operator<<(ostream& out, const card_name value){
-    const char* s = 0;
-#define PROCESS_VAL(p) case(p): s = #p; break;
-    switch(value){
-        PROCESS_VAL(Forest);     
-        PROCESS_VAL(GrizzlyBear);     
-        PROCESS_VAL(Mountain);     
-        PROCESS_VAL(LightningBolt);     
-    }
-#undef PROCESS_VAL
-    return out << s;
-}
-
-ostream& operator<<(ostream& out, const mana_type value){
-    const char* s = 0;
-#define PROCESS_VAL(p) case(p): s = #p; break;
-    switch(value){
-        PROCESS_VAL(red);     
-        PROCESS_VAL(green);     
-        PROCESS_VAL(blue);     
-        PROCESS_VAL(black);     
-        PROCESS_VAL(white);     
-        PROCESS_VAL(colorless);     
-    }
-#undef PROCESS_VAL
-    return out << s;
-}
 
 
 int id_;
@@ -181,7 +150,7 @@ void Player::playMove(Move* move, vector<Player*>players) {
 
             for (Effect* effect: card->effects) {
                if (effect->trigger == cast_this) {
-                  card->castSpellEffectDefs[0](move, effect, players);
+                  card->castSpellEffectDefs[0](move, card, effect, players);
                }
             }
             graveyard_.push_back(card);
@@ -233,5 +202,6 @@ bool Player::canAffordAndTarget(Card* card) {
    }
    return canTarget && canAffordManaCost(card->manaCost);
 }
+
 
 
