@@ -9,24 +9,14 @@ using namespace std;
 
 // Current Cards
 // Mountain
+// Lightning Bolt
+// Grizzly Bear
 
 // Future Cards
 // Forest
-// Lightning Bolt, Giant Growth, Earthquake
-// Kird Ape, Granite Gargoyle, Llanowar Elf
+// Giant Growth, Earthquake
+// Kird Ape, Granite Gargoyle, Llanowar Elf, 
 
-
-// https://stackoverflow.com/questions/3342726/c-print-out-enum-value-as-text
-ostream& operator<<(ostream& out, const card_name value){
-    const char* s = 0;
-#define PROCESS_VAL(p) case(p): s = #p; break;
-    switch(value){
-        PROCESS_VAL(Mountain);     
-        PROCESS_VAL(LightningBolt);     
-    }
-#undef PROCESS_VAL
-    return out << s;
-}
 
 ostream& operator<<(ostream& out, const card_type value){
     const char* s = 0;
@@ -51,7 +41,6 @@ ostream& operator<<(ostream& out, const move_type value){
 #undef PROCESS_VAL
     return out << s;
 }
-
 
 
 class Game {
@@ -98,12 +87,18 @@ class Game {
    void makeDecks() {
       int deckSize = 60;
       for (int x=0; x<deckSize; x++) {
-         if (x % 3 == 0) {
+         if (x % 3 == 0 && x % 2 == 0) {
+            addCardToLibraryForPlayerAtIndex(Card::forest(), 0);
+            addCardToLibraryForPlayerAtIndex(Card::forest(), 1);
+         } else if (x % 3 == 0) {
             addCardToLibraryForPlayerAtIndex(Card::mountain(), 0);
             addCardToLibraryForPlayerAtIndex(Card::mountain(), 1);
-         } else {
+         } else if (x % 2 == 0) {
             addCardToLibraryForPlayerAtIndex(Card::lightning_bolt(), 0);
             addCardToLibraryForPlayerAtIndex(Card::lightning_bolt(), 1);            
+         } else {
+            addCardToLibraryForPlayerAtIndex(Card::grizzly_bear(), 0);
+            addCardToLibraryForPlayerAtIndex(Card::grizzly_bear(), 1);            
          }
       }
    }
@@ -119,11 +114,13 @@ class Game {
    void printGameStatus() {
       for (int x=0; x < players_.size(); x++) {
          Player* p = players_[x];
-         cout << p->username() << " has " << p->library().size() << " cards in library";
-         cout << ", " << p->inPlay().size() << " cards in play";
-         cout << " and " << p->hand().size() << " cards in hand.\n";
+         cout << p->username() << ": " << p->library().size() << " (lib)";
+         cout << ", " << p->creatures().size() << " (creat)";
+         cout << ", " << p->lands().size() << " (lands)";
+         cout << ", " << p->graveyard().size() << " (grave)";
+         cout << ", " << p->hand().size() << " (hand).\n";
       }
-      cout << "Valid moves are: ";
+      cout << "Valid moves: ";
       for (Move* move: validMoves()) {
          cout << "(" << move->moveType << ", " << move->cardId << ", " << move->playerId << "), ";
       }
@@ -155,11 +152,20 @@ class Game {
          }
       }
 
-      // instants
       for (Card* card: p->hand()) {
          if (cardNamesWithMoves[card->name]) {
             continue;
          }
+         // creatures
+         if (card->cardType == Creature && p->canAffordManaCost(card->manaCost)) {
+            Move* move = new Move();
+            move->moveType = select_card;
+            move->cardId = card->id;
+            move->playerId = p->id();
+            cardNamesWithMoves[card->name] = true;
+            moves.push_back(move);
+         }
+         // instants
          if (card->cardType == Instant && p->canAffordAndTarget(card)) {
             cardNamesWithMoves[card->name] = true;
             if (card->effects[0]->targetType == any_player_or_creature) {
@@ -275,13 +281,13 @@ class Game {
 
 int main() {
    Game game;
-   game.addPlayer(new Player(0, "Spike"));
+   game.addPlayer(new Player(0, "Spk"));
    game.addPlayer(new Player(1, "Lee"));
    game.makeDecks();
    game.drawOpeningHands();
    game.printGameStatus();
    
-   int movesToPlay = 999;
+   int movesToPlay = 10;
    int i = 0;
    while (!game.isOver()) {
       game.playRandomMove();
@@ -295,6 +301,4 @@ int main() {
       break;
       }
    }
-
-
 }

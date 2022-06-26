@@ -2,6 +2,8 @@
 #define ENUMS_H
 
 enum card_name : int  {
+   Forest,
+   GrizzlyBear,
    Mountain,
    LightningBolt
 };
@@ -13,6 +15,7 @@ enum card_type : int {
 };
 
 enum effect_name : int  {
+   mana_green,
    mana_red,
    damage
 };

@@ -10,22 +10,20 @@ class Move;
 enum mana_type :  int;
 
 
-class Player
-{
+class Player {
    private:
    int id_;
    string username_;
 
    vector<Card*> hand_;
    vector<Card*> library_;
+   vector<Card*> graveyard_;
    vector<Card*> inPlay_;
    int life_;
 
    bool drewFromEmptyLibrary_;
    int landsPlayableThisTurn_;
    int landsPlayedThisTurn_;
-   bool canAffordManaCost(map<mana_type, int> manaCost);
-
 
    public:
    Player(int playerId, string playerUsername);
@@ -41,10 +39,16 @@ class Player
    void decrementLife(int life);
    vector<Card*> inPlay();
    vector<Card*> hand();
+   vector<Card*> graveyard();
+   vector<Card*> creatures();
+   vector<Card*> lands();
    vector<Card*> library();
    int landsPlayableThisTurn()  { return landsPlayableThisTurn_; }
    int landsPlayedThisTurn()  { return landsPlayedThisTurn_; }
+   bool canAffordManaCost(map<mana_type, int> manaCost);
    bool canAffordAndTarget(Card* card);
+   void payMana(map<mana_type, int> manaCost);
+
 }; 
 
 #endif

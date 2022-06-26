@@ -13,18 +13,24 @@ void Card::doManaEffect(Move* m, Effect* effect, vector<Player*>players) {
 void Card::doDamageEffect(Move* m, Effect* effect, vector<Player*>players) {
    if (m->targetType == player) {
       for (Player* p: players) {
-         if (p->id() == m->playerId) {
+         if (p->id() == m->targetId) {
+            cout << name << " deals " << effect->amount << ".\n";
             p->decrementLife(effect->amount);
          }
-      }
-      
+      } 
    } 
    if (m->targetType == creature) {
-
-   } 
+      for (Player* p: players) {
+         for (Card* c: p->inPlay()) {
+            if (c->id == m->targetId) {
+               cout << "Implement bolt a creature";
+            }
+         } 
+      } 
+   }
 }
 
-   Card* Card::mountain() {
+Card* Card::mountain() {
    // make a card with one effect
    Card* m = new Card();
    m->name = Mountain;
@@ -39,8 +45,35 @@ void Card::doDamageEffect(Move* m, Effect* effect, vector<Player*>players) {
    return m;
 };
 
+Card* Card::forest() {
+   // make a card with one effect
+   Card* m = new Card();
+   m->name = Forest;
+   m->cardType = Land;
+   Effect* mManaEffect = new Effect();
+   mManaEffect->name = mana_green;
+   mManaEffect->amount = 1;
+   mManaEffect->targetType = self;
+   mManaEffect->trigger = count_mana;
+   m->effects.push_back(mManaEffect);
+   m->activatedEffectDefs.push_back(Card::doManaEffect);
+   return m;
+};
 
-   Card* Card::lightning_bolt() {
+Card* Card::grizzly_bear() {
+   Card* bear = new Card();
+   bear->name = GrizzlyBear;
+   bear->cardType = Creature;
+   bear->power = 2;
+   bear->toughness = 2;
+   map<mana_type, int> manaCost;
+   manaCost[green] = 1;
+   manaCost[colorless] = 1;
+   bear->manaCost = manaCost;
+   return bear;
+};
+
+Card* Card::lightning_bolt() {
    // make a card with one effect
    Card* bolt = new Card();
    bolt->name = LightningBolt;

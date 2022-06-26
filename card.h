@@ -38,6 +38,8 @@ class Card {
   card_name name;         
   card_type cardType;     
   map<mana_type, int> manaCost;
+  int power;
+  int toughness;
 
   bool tapped = false;
 
@@ -45,10 +47,12 @@ class Card {
   vector<EffectDef> activatedEffectDefs; 
   vector<EffectDef> castSpellEffectDefs; 
 
-   static Card* lightning_bolt();
-   static Card* mountain();
-   static void doManaEffect(Move* m, Effect* effect, vector<Player*>players);
-   static void doDamageEffect(Move* m, Effect* effect, vector<Player*>players);
+  static Card* grizzly_bear();
+  static Card* lightning_bolt();
+  static Card* forest();
+  static Card* mountain();
+  static void doManaEffect(Move* m, Effect* effect, vector<Player*>players);
+  static void doDamageEffect(Move* m, Effect* effect, vector<Player*>players);
 };       
 
 
