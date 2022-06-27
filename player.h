@@ -31,7 +31,7 @@ class Player {
    int id();
    int life();
    void addCardToLibrary (Card* c);
-   void playMove(Move* move, vector<Player*>players);
+   void playMove(Move* move, vector<Player*>players, int turn);
    int didDrawFromEmptyLibrary();
    void drawCard ();
    void resetLandsPlayedThisTurn();

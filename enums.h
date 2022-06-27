@@ -38,11 +38,13 @@ enum target_type : int  {
 enum game_step : int  {
    draw_step,
    main_first,
+   attack_step,
    end_step
 };
 
 enum move_type : int  {
    pass,
+   select_attackers,
    select_card,
    select_card_with_targets
 };

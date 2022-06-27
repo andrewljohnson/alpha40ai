@@ -110,8 +110,20 @@ void Player::payMana(map<mana_type, int> manaCost) {
 }             
 
 
-void Player::playMove(Move* move, vector<Player*>players) {
-   if (move->moveType == select_card || move->moveType == select_card_with_targets) {
+void Player::playMove(Move* move, vector<Player*>players, int turn) {
+   Player *opponent = players[0];
+   if (opponent->id() == id_) {
+      opponent = players[1];
+   }
+   if (move->moveType == select_attackers) {
+      for (Card *creature: creatures()) {
+         auto findIndex = find(move->attackerIds.begin(), move->attackerIds.end(), creature->id);
+         if (findIndex != move->attackerIds.end()) {
+            opponent->decrementLife(creatures()[findIndex - move->attackerIds.begin()]->power);
+            creatures()[findIndex - move->attackerIds.begin()]->tapped = true;
+         }
+      }
+   } else if (move->moveType == select_card || move->moveType == select_card_with_targets) {
       int cardIndex = 0;
       for(int x=0;x<hand_.size();x++) {
          if (hand_[x]->id == move->cardId) {
@@ -122,6 +134,7 @@ void Player::playMove(Move* move, vector<Player*>players) {
       Card* card = hand_[cardIndex];
       if (move->moveType == select_card) {
          cout << username_ << " plays a " << card->name << ".\n";
+         card->turnPlayed = turn;
          inPlay_.push_back(card);
          hand_.erase(hand_.begin() + cardIndex);
          if (card->cardType == Land) {

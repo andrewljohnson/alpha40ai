@@ -46,6 +46,7 @@ ostream& operator<<(ostream& out, const move_type value){
 #define PROCESS_VAL(p) case(p): s = #p; break;
     switch(value){
         PROCESS_VAL(pass);     
+        PROCESS_VAL(select_attackers);     
         PROCESS_VAL(select_card);     
         PROCESS_VAL(select_card_with_targets);     
     }

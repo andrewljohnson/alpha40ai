@@ -90,70 +90,6 @@ class Game {
       cout << "\n";
    }
 
-   vector<Move*> validMoves() {
-      vector<Move*> moves;
-      Player* p = players_[indexOfPlayerWithPriority_];
-      map<card_name, bool> cardNamesWithMoves;
-      if (turnPlayer()->id() == p->id()) {
-         // playable land moves
-         if (gameStep == main_first) {
-            for (int x=0;x<p->hand().size();x++) {
-               Card* card = p->hand()[x];
-               if (cardNamesWithMoves[card->name]) {
-                  continue;
-               }
-               bool isPlayableLand = card->cardType == Land && p->landsPlayedThisTurn() < p->landsPlayableThisTurn();
-               bool isPlayableCreature = card->cardType == Creature && p->canAffordManaCost(card->manaCost);
-               if (isPlayableLand || isPlayableCreature) {
-                  Move* move = new Move(select_card, card->id, p->id());
-                  cardNamesWithMoves[card->name] = true;
-                  moves.push_back(move);
-               }
-            }
-
-         }
-      }
-
-      for (Card* card: p->hand()) {
-         if (cardNamesWithMoves[card->name]) {
-            continue;
-         }
-         // instants
-         if (card->cardType == Instant && p->canAffordAndTarget(card)) {
-            cardNamesWithMoves[card->name] = true;
-            if (card->effects[0]->targetType == any_player_or_creature) {
-               Move* moveSelf = new Move(select_card_with_targets, card->id, p->id());
-               moveSelf->targetId = playerWithPriority()->id(); 
-               moveSelf->targetType = player; 
-               moves.push_back(moveSelf);
-
-               Move* moveOpponent = new Move(select_card_with_targets, card->id, p->id());
-               moveOpponent->targetId = playerWithoutPriority()->id(); 
-               moveOpponent->targetType = player; 
-               moves.push_back(moveOpponent);
-
-               for (Player* player: players_) {
-                  for (Card* permanent: player->inPlay()) {
-                     if (permanent->cardType != Creature) {
-                        continue;
-                     }
-                     Move* moveCreature = new Move(select_card_with_targets, card->id, p->id());
-                     moveCreature->targetId = permanent->id; 
-                     moveCreature->targetType = creature; 
-                     moves.push_back(moveCreature);
-                  }
-               }
-
-            }
-         }
-      }
-
-      // default pass move
-      Move* move = new Move(pass, 0, p->id());
-      moves.push_back(move);
-      return moves;
-   }
-
    Player* playerWithPriority() {
       return players_[indexOfPlayerWithPriority_];
    }
@@ -168,6 +104,95 @@ class Game {
       return players_[1];
    }
 
+   vector<Move*> addAttackMoves(vector<Move*> moves) {
+      vector <int> attackableCreatureIds;
+      for (Card* card: playerWithPriority()->inPlay()) {
+         if (!card->tapped && card->turnPlayed < turn) {
+            attackableCreatureIds.push_back(card->id);
+         }
+      }
+      if (attackableCreatureIds.size() > 0) {
+         Move* moveAttack = new Move(select_attackers, 0, playerWithPriority()->id());
+         moveAttack->attackerIds = attackableCreatureIds;
+         moves.push_back(moveAttack);
+      }
+      return moves;
+   }
+
+   vector<Move*> addPlayPermanentMoves(vector<Move*> moves) {
+      map<card_name, bool> cardNamesWithMoves;
+      for (Card* card: playerWithPriority()->hand()) {
+         if (cardNamesWithMoves[card->name]) {
+            continue;
+         }
+         bool isPlayableLand = card->cardType == Land && playerWithPriority()->landsPlayedThisTurn() < playerWithPriority()->landsPlayableThisTurn();
+         bool isPlayableCreature = card->cardType == Creature && playerWithPriority()->canAffordManaCost(card->manaCost);
+         if (isPlayableLand || isPlayableCreature) {
+            Move* move = new Move(select_card, card->id, playerWithPriority()->id());
+            cardNamesWithMoves[card->name] = true;
+            moves.push_back(move);
+         }
+      }
+      return moves;
+   }
+
+   vector<Move*> addInstantMoves(vector<Move*> moves) {
+      map<card_name, bool> cardNamesWithMoves;
+      for (Card* card: playerWithPriority()->hand()) {
+         if (cardNamesWithMoves[card->name]) {
+            continue;
+         }
+         // instants
+         if (card->cardType == Instant && playerWithPriority()->canAffordAndTarget(card)) {
+            cardNamesWithMoves[card->name] = true;
+            if (card->effects[0]->targetType == any_player_or_creature) {
+               Move* moveSelf = new Move(select_card_with_targets, card->id, playerWithPriority()->id());
+               moveSelf->targetId = playerWithPriority()->id(); 
+               moveSelf->targetType = player; 
+               moves.push_back(moveSelf);
+
+               Move* moveOpponent = new Move(select_card_with_targets, card->id, playerWithPriority()->id());
+               moveOpponent->targetId = playerWithoutPriority()->id(); 
+               moveOpponent->targetType = player; 
+               moves.push_back(moveOpponent);
+
+               for (Player* player: players_) {
+                  for (Card* permanent: player->inPlay()) {
+                     if (permanent->cardType != Creature) {
+                        continue;
+                     }
+                     Move* moveCreature = new Move(select_card_with_targets, card->id, playerWithPriority()->id());
+                     moveCreature->targetId = permanent->id; 
+                     moveCreature->targetType = creature; 
+                     moves.push_back(moveCreature);
+                  }
+               }
+
+            }
+         }
+      }
+      return moves;
+   }
+
+   vector<Move*> addPassMove(vector<Move*> moves) {
+      Move* move = new Move(pass, 0, playerWithPriority()->id());
+      moves.push_back(move);
+      return moves;
+   }
+
+   vector<Move*> validMoves() {
+      vector<Move*> moves;
+      if (turnPlayer()->id() == playerWithPriority()->id()) {
+         if (gameStep == attack_step) {
+            moves = addAttackMoves(moves);
+         } else if (gameStep == main_first) {
+            moves = addPlayPermanentMoves(moves);
+         }
+      }
+      moves = addInstantMoves(moves);
+      moves = addPassMove(moves);
+      return moves;
+   }
 
    void passPriority() {
       if (indexOfPlayerWithPriority_ == 0) {
@@ -178,8 +203,17 @@ class Game {
    void playMove(Move* move) {
       if (move->moveType == pass) {
          passPriority();
-
+         if (gameStep == attack_step) {
+            if(turnPlayer()->id() == playerWithPriority()->id()) {
+               gameStep = end_step;               
+            }
+         }
          if (gameStep == main_first) {
+            if(turnPlayer()->id() == playerWithPriority()->id()) {
+               gameStep = attack_step;               
+            }
+         }
+         if (gameStep == attack_step) {
             if(turnPlayer()->id() == playerWithPriority()->id()) {
                gameStep = end_step;               
             }
@@ -200,7 +234,7 @@ class Game {
          }
          return;
       }
-      playerWithPriority()->playMove(move, players_);
+      playerWithPriority()->playMove(move, players_, turn);
    }
 
    void playRandomMove() {

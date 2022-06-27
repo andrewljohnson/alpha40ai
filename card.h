@@ -36,6 +36,7 @@ typedef void (*EffectDef) (Move* m, Card* card, Effect* effect, vector<Player*>p
 class Card {             
   public:
   int id;              // assign when card is instantiated for a deck
+  int turnPlayed;
   card_name name;         
   card_type cardType;     
   map<mana_type, int> manaCost;
