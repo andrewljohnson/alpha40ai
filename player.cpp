@@ -119,7 +119,10 @@ void Player::playMove(Move* move, vector<Player*>players, int turn) {
       for (Card *creature: creatures()) {
          auto findIndex = find(move->attackerIds.begin(), move->attackerIds.end(), creature->id);
          if (findIndex != move->attackerIds.end()) {
-            opponent->decrementLife(creatures()[findIndex - move->attackerIds.begin()]->power);
+            Card *attacker = creatures()[findIndex - move->attackerIds.begin()];
+            int power = attacker->power;
+            cout << username_ << " attacks for " << power << " with " << attacker->name << ".\n";
+            opponent->decrementLife(power);
             creatures()[findIndex - move->attackerIds.begin()]->tapped = true;
          }
       }

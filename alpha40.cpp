@@ -1,11 +1,12 @@
+#include <iostream>
 #include <map>
 #include <vector>
-#include "player.h"
 #include "card.h"
-#include "move.h"
 #include "enums.h"
-#include <iostream>
+#include "move.h"
+#include "player.h"
 using namespace std;
+
 
 class Game {
 
@@ -77,13 +78,14 @@ class Game {
    void printGameStatus() {
       for (int x=0; x < players_.size(); x++) {
          Player* p = players_[x];
-         cout << p->username() << ": " << p->library().size() << " (lib)";
+         cout << p->username() << ": " << p->life() << " (life)";
+         cout << ", " << p->library().size() << " (lib)";
          cout << ", " << p->creatures().size() << " (creat)";
          cout << ", " << p->lands().size() << " (lands)";
          cout << ", " << p->graveyard().size() << " (grave)";
          cout << ", " << p->hand().size() << " (hand).\n";
       }
-      cout << "Valid moves: ";
+      cout << playerWithPriority()->username() << "'s valid moves in " << gameStep << ": ";
       for (Move* move: validMoves()) {
          cout << "(" << move->moveType << ", " << move->cardId << ", " << move->playerId << "), ";
       }
@@ -106,7 +108,7 @@ class Game {
 
    vector<Move*> addAttackMoves(vector<Move*> moves) {
       vector <int> attackableCreatureIds;
-      for (Card* card: playerWithPriority()->inPlay()) {
+      for (Card* card: playerWithPriority()->creatures()) {
          if (!card->tapped && card->turnPlayed < turn) {
             attackableCreatureIds.push_back(card->id);
          }
@@ -213,18 +215,14 @@ class Game {
                gameStep = attack_step;               
             }
          }
-         if (gameStep == attack_step) {
-            if(turnPlayer()->id() == playerWithPriority()->id()) {
-               gameStep = end_step;               
-            }
-         }
          if (gameStep == end_step) {
             if(turnPlayer()->id() == playerWithPriority()->id()) {
+               cout << "~~~END OF TURN " << turn << "~~~\n";
                passPriority();
                gameStep = draw_step;                   
+               turn += 1;                          
                turnPlayer()->resetLandsPlayedThisTurn();
                turnPlayer()->untapPermanents();
-               turn += 1;                          
                playerWithPriority()->drawCard();
                if (playerWithPriority()->didDrawFromEmptyLibrary()) {
                   return;
@@ -262,19 +260,18 @@ int main() {
    game.drawOpeningHands();
    game.printGameStatus();
    
-   int movesToPlay = 20;
+   int movesToPlay = 999;
    int i = 0;
    while (!game.isOver()) {
       game.playRandomMove();
       if (game.isOver()) {
-         game.printGameStatus();
-         cout << "GAME OVER";
+         cout << "\n~~~~~~GAME OVER~~~~~~\n";
       } else {
-         game.printGameStatus();
       }
       i++;
       if (i >= movesToPlay) {
       break;
       }
    }
+   game.printGameStatus();
 }

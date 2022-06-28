@@ -58,6 +58,7 @@ enum mana_type : int  {
    black,
 };
 
+ostream& operator<<(ostream& out, const game_step value);
 ostream& operator<<(ostream& out, const card_name value);
 ostream& operator<<(ostream& out, const mana_type value);
 ostream& operator<<(ostream& out, const card_type value);

@@ -23,9 +23,15 @@ void doManaEffect(Move* m, Card* card, Effect* effect, vector<Player*>players) {
 
 void doDamageEffect(Move* m, Card* card, Effect* effect, vector<Player*>players) {
    if (m->targetType == player) {
+      Player *caster;
+      for (Player* p: players) {
+         if (p->id() == m->playerId) {
+            caster = p;
+         }
+      }
       for (Player* p: players) {
          if (p->id() == m->targetId) {
-            cout << card->name << " deals " << effect->amount << ".\n";
+            cout << caster->username() <<" casts "<< card->name << " on " << p->username() << " and deals " << effect->amount << ".\n";
             p->decrementLife(effect->amount);
          }
       } 

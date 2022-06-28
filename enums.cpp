@@ -53,3 +53,17 @@ ostream& operator<<(ostream& out, const move_type value){
 #undef PROCESS_VAL
     return out << s;
 }
+
+ostream& operator<<(ostream& out, const game_step value){
+    const char* s = 0;
+#define PROCESS_VAL(p) case(p): s = #p; break;
+    switch(value){
+        PROCESS_VAL(draw_step);     
+        PROCESS_VAL(main_first);     
+        PROCESS_VAL(attack_step);     
+        PROCESS_VAL(end_step);     
+    }
+#undef PROCESS_VAL
+    return out << s;
+}
+
