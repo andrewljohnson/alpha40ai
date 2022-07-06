@@ -9,19 +9,19 @@ enum target_type :  int;
 
 class Move {
    public:
-   move_type moveType;
    int playerId;
    int cardId;
    int targetId;
+   map<int, int> blocks;
+   move_type moveType;
    target_type targetType;
    vector<int> attackerIds;
 
    Move(move_type mtype, int cid, int pid) {
-      moveType = mtype;
       cardId = cid;
+      moveType = mtype;
       playerId = pid;
    }
-
 };
 
 

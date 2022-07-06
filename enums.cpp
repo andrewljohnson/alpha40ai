@@ -47,6 +47,7 @@ ostream& operator<<(ostream& out, const move_type value){
     switch(value){
         PROCESS_VAL(pass);     
         PROCESS_VAL(select_attackers);     
+        PROCESS_VAL(select_defenders);     
         PROCESS_VAL(select_card);     
         PROCESS_VAL(select_card_with_targets);     
     }
@@ -58,9 +59,12 @@ ostream& operator<<(ostream& out, const game_step value){
     const char* s = 0;
 #define PROCESS_VAL(p) case(p): s = #p; break;
     switch(value){
+        PROCESS_VAL(untap_step);     
+        PROCESS_VAL(upkeep_step);     
         PROCESS_VAL(draw_step);     
         PROCESS_VAL(main_first);     
         PROCESS_VAL(attack_step);     
+        PROCESS_VAL(main_second);     
         PROCESS_VAL(end_step);     
     }
 #undef PROCESS_VAL

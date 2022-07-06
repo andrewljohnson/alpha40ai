@@ -6,13 +6,8 @@ class Move;
 class Player;
 #include <map>
 #include <vector>
+#include "enums.h"
 using namespace std;
-enum card_name :  int;
-enum card_type :  int;
-enum mana_type :  int;
-enum effect_name :  int;
-enum effect_trigger :  int;
-enum target_type :  int;
 
 // a struct, based on player actions, that gets passed into an EffectDef function
 struct TargetInfo {             
@@ -34,14 +29,26 @@ typedef void (*EffectDef) (Move* m, Card* card, Effect* effect, vector<Player*>p
 
 
 class Card {             
+  int id_;              // assign when card is instantiated for a deck
+  card_name name_;         
+  card_type cardType_;     
+  int power_;
+  int toughness_;
+  int damage_;
+  
   public:
-  int id;              // assign when card is instantiated for a deck
+  Card(card_name name, card_type type);
+  card_name name(); 
+  card_type cardType(); 
+  void takeDamage(Player* owner, int newDamage);
+  int power();
+  int toughness();
+  int damage();
+  int id(); 
+  void setId(int newId);
+  void setPower(int newPower);
   int turnPlayed;
-  card_name name;         
-  card_type cardType;     
   map<mana_type, int> manaCost;
-  int power;
-  int toughness;
 
   bool tapped = false;
 

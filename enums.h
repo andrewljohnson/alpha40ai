@@ -36,15 +36,19 @@ enum target_type : int  {
 };
 
 enum game_step : int  {
+   untap_step,
+   upkeep_step,
    draw_step,
    main_first,
    attack_step,
+   main_second,
    end_step
 };
 
 enum move_type : int  {
    pass,
    select_attackers,
+   select_defenders,
    select_card,
    select_card_with_targets
 };

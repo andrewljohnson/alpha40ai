@@ -2,6 +2,7 @@
 #include "move.h"
 #include "card.h"
 #include "enums.h"
+#include <algorithm>
 using namespace std;
 
 
@@ -21,8 +22,6 @@ vector<Card*> graveyard_;
 vector<Card*> library_;
 vector<Card*> inPlay_;
 
-int Player::id() { return id_; }
-int Player::life()  { return life_; }
 vector<Card*> Player::hand()  { return hand_; }
 vector<Card*> Player::library()  { return library_; }
 vector<Card*> Player::graveyard()  { return graveyard_; }
@@ -30,7 +29,7 @@ vector<Card*> Player::inPlay()  { return inPlay_; }
 vector<Card*> Player::creatures()  { 
    vector<Card*> creatures;
    for (Card* inPlayCard: inPlay_) {
-      if (inPlayCard->cardType == Creature) {
+      if (inPlayCard->cardType() == Creature) {
          creatures.push_back(inPlayCard);
       }
    }
@@ -39,7 +38,7 @@ vector<Card*> Player::creatures()  {
 vector<Card*> Player::lands()  { 
    vector<Card*> lands;
    for (Card* inPlayCard: inPlay_) {
-      if (inPlayCard->cardType == Land) {
+      if (inPlayCard->cardType() == Land) {
          lands.push_back(inPlayCard);
       }
    }
@@ -63,10 +62,9 @@ void Player::drawCard () {
    }
    hand_.push_back(library_.back());
    library_.pop_back();
-   // cout << username_ << " drew a card.\n"; 
 }
 
-int Player::didDrawFromEmptyLibrary() {
+bool Player::didDrawFromEmptyLibrary() {
    return drewFromEmptyLibrary_;      
 }
 
@@ -79,7 +77,7 @@ void Player::payMana(map<mana_type, int> manaCost) {
                continue;
             }
             for (Card* inPlayCard: inPlay_) {
-               if (!inPlayCard->tapped && inPlayCard->cardType == Land) {
+               if (!inPlayCard->tapped && inPlayCard->cardType() == Land) {
                   if (inPlayCard->effects[0]->name == mana_red && p.first == red)
                       {
                      inPlayCard->tapped = true;
@@ -101,7 +99,7 @@ void Player::payMana(map<mana_type, int> manaCost) {
             if (tappedThisTime) {
                continue;
             }
-            if (!inPlayCard->tapped && inPlayCard->cardType == Land) {
+            if (!inPlayCard->tapped && inPlayCard->cardType() == Land) {
                inPlayCard->tapped = true;
                tappedThisTime = true;
             }
@@ -110,6 +108,40 @@ void Player::payMana(map<mana_type, int> manaCost) {
 }             
 
 
+void Player::bury(Card *permanent) {
+   cout << permanent->name() << " (" << permanent->id() << ") was buried.\n";
+   graveyard_.push_back(permanent);
+   int cardIndex = 0;
+   for(int x=0;x<inPlay_.size();x++) {
+      if (inPlay_[x]->id() == permanent->id()) {
+         cardIndex = x;
+         break;
+      }
+   }
+   inPlay_.erase(inPlay_.begin() + cardIndex);
+}
+
+
+void Player::doUnblockedAttack(vector<Player*>players) {
+   Player *opponent = players[0];
+   if (opponent->id() == id_) {
+      opponent = players[1];
+   }
+   if (currentAttack()->attackerIds.size()) {
+      for (int aid:currentAttack()->attackerIds) {
+         Card *attacker;
+         for (Card* creature:creatures()) {
+            if (creature->id() == aid) {
+               attacker = creature;
+            }
+         } 
+         opponent->decrementLife(attacker->power());
+      }
+
+   }
+   currentAttack_ = 0;
+}
+
 void Player::playMove(Move* move, vector<Player*>players, int turn) {
    Player *opponent = players[0];
    if (opponent->id() == id_) {
@@ -117,33 +149,58 @@ void Player::playMove(Move* move, vector<Player*>players, int turn) {
    }
    if (move->moveType == select_attackers) {
       for (Card *creature: creatures()) {
-         auto findIndex = find(move->attackerIds.begin(), move->attackerIds.end(), creature->id);
+         auto findIndex = find(move->attackerIds.begin(), move->attackerIds.end(), creature->id());
          if (findIndex != move->attackerIds.end()) {
             Card *attacker = creatures()[findIndex - move->attackerIds.begin()];
-            int power = attacker->power;
-            cout << username_ << " attacks for " << power << " with " << attacker->name << ".\n";
-            opponent->decrementLife(power);
+            int power = attacker->power();
+            cout << username_ << " attacks for " << power << " with " << attacker->name() << " (" << attacker->id() << ").\n";
             creatures()[findIndex - move->attackerIds.begin()]->tapped = true;
          }
       }
+      currentAttack_ = move;
+   }
+
+   if (move->moveType == select_defenders) {
+      for (int aid:opponent->currentAttack()->attackerIds) {
+         Card *attacker;
+         for (Card* creature:opponent->creatures()) {
+            if (creature->id() == aid) {
+               attacker = creature;
+            }
+         } 
+         if (move->blocks.find(aid) != move->blocks.end()) {
+            Card *defender;
+            for (Card* creature:creatures()) {
+               if (creature->id() == move->blocks[aid]) {
+                  defender = creature;
+               }
+            } 
+            cout << defender->name() << " blocks " << attacker->name() << ".\n";
+            defender->takeDamage(this, attacker->power());
+            attacker->takeDamage(opponent, defender->power());
+         } else {
+            decrementLife(attacker->power());
+         }
+      }
+      opponent->setCurrentAttack(0);      
    } else if (move->moveType == select_card || move->moveType == select_card_with_targets) {
       int cardIndex = 0;
       for(int x=0;x<hand_.size();x++) {
-         if (hand_[x]->id == move->cardId) {
+         if (hand_[x]->id() == move->cardId) {
             cardIndex = x;
             break;
          }
       }
       Card* card = hand_[cardIndex];
       if (move->moveType == select_card) {
-         cout << username_ << " plays a " << card->name << ".\n";
+         cout << username_ << " plays a " << card->name() << ".\n";
          card->turnPlayed = turn;
          inPlay_.push_back(card);
          hand_.erase(hand_.begin() + cardIndex);
-         if (card->cardType == Land) {
+         if (card->cardType() == Land) {
             landsPlayedThisTurn_++;
          }            
-         if (card->cardType == Creature) {
+         if (card->cardType() == Creature) {
             payMana(card->manaCost);
          }
       }
@@ -153,7 +210,7 @@ void Player::playMove(Move* move, vector<Player*>players, int turn) {
             {
                for (int x=0;x<p.second;x++) {
                   for (Card* inPlayCard: inPlay_) {
-                     if (!inPlayCard->tapped && inPlayCard->cardType == Land) {
+                     if (!inPlayCard->tapped && inPlayCard->cardType() == Land) {
                         if ((inPlayCard->effects[0]->name == mana_red && p.first == red)
                            || p.first == colorless) {
                            inPlayCard->tapped = true;
@@ -175,6 +232,14 @@ void Player::playMove(Move* move, vector<Player*>players, int turn) {
    }
 }
 
+Move* Player::currentAttack() {
+   return currentAttack_;
+}
+
+void Player::setCurrentAttack(Move *move) {
+   currentAttack_ = move;;
+}
+
 void Player::resetLandsPlayedThisTurn() {
    landsPlayedThisTurn_ = 0;
 }
@@ -189,7 +254,7 @@ void Player::untapPermanents() {
 bool Player::canAffordManaCost(map<mana_type, int> manaCost) {
    map<mana_type, int> manaAvailable;
    for (Card* card: inPlay_) {
-      if (!card->tapped && card->cardType == Land) {
+      if (!card->tapped && card->cardType() == Land) {
          if (card->effects[0]->name == mana_red) {
             manaAvailable[red] += card->effects[0]->amount;
          }
@@ -219,5 +284,10 @@ bool Player::canAffordAndTarget(Card* card) {
    return canTarget && canAffordManaCost(card->manaCost);
 }
 
-
-
+void Player::discardDown() {
+   cout << "discarding down\n\n";
+   while (hand_.size() > 7) {
+      graveyard_.push_back(hand_[0]);
+      hand_.erase(hand_.begin());   
+   }
+}

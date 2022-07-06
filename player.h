@@ -24,31 +24,37 @@ class Player {
    bool drewFromEmptyLibrary_;
    int landsPlayableThisTurn_;
    int landsPlayedThisTurn_;
+   Move* currentAttack_;
 
    public:
    Player(int playerId, string playerUsername);
+   bool canAffordManaCost(map<mana_type, int> manaCost);
+   bool canAffordAndTarget(Card* card);
+   bool didDrawFromEmptyLibrary();
+   int id() { return id_; }
+   int landsPlayableThisTurn()  { return landsPlayableThisTurn_; }
+   int landsPlayedThisTurn()  { return landsPlayedThisTurn_; }
+   int life() { return life_; }
+   void discardDown();
+   void doUnblockedAttack(vector<Player*>players);
+
+   Move* currentAttack();
    string username();
-   int id();
-   int life();
-   void addCardToLibrary (Card* c);
-   void playMove(Move* move, vector<Player*>players, int turn);
-   int didDrawFromEmptyLibrary();
-   void drawCard ();
-   void resetLandsPlayedThisTurn();
-   void untapPermanents();
-   void decrementLife(int life);
    vector<Card*> inPlay();
    vector<Card*> hand();
    vector<Card*> graveyard();
    vector<Card*> creatures();
    vector<Card*> lands();
    vector<Card*> library();
-   int landsPlayableThisTurn()  { return landsPlayableThisTurn_; }
-   int landsPlayedThisTurn()  { return landsPlayedThisTurn_; }
-   bool canAffordManaCost(map<mana_type, int> manaCost);
-   bool canAffordAndTarget(Card* card);
+   void addCardToLibrary (Card* c);
+   void bury(Card *permanent);
+   void decrementLife(int life);
+   void drawCard ();
    void payMana(map<mana_type, int> manaCost);
-
+   void playMove(Move* move, vector<Player*>players, int turn);
+   void resetLandsPlayedThisTurn();
+   void setCurrentAttack(Move *move);
+   void untapPermanents();
 }; 
 
 

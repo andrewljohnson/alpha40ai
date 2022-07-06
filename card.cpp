@@ -16,9 +16,48 @@ using namespace std;
 // Giant Growth, Earthquake
 // Kird Ape, Granite Gargoyle, Llanowar Elf, 
 
+Card::Card(card_name name, card_type type) {
+   name_ = name;
+   cardType_ = type;
+}
+
+int Card::id() {
+   return id_;
+}
+
+int Card::power() {
+   return power_;
+}
+
+int Card::toughness() {
+   return toughness_;
+}
+
+card_name Card::name() {
+   return name_;
+}
+
+card_type Card::cardType() {
+   return cardType_;
+}
+
+int Card::damage() {
+   return damage_;
+}
+
+void Card::takeDamage(Player* owner, int newDamage) {
+   damage_ += newDamage;
+   if (damage_ >= toughness_) {
+      owner->bury(this);
+   }
+}
+
+void Card::setId(int newId) {
+   id_ = newId;
+}
+
 void doManaEffect(Move* m, Card* card, Effect* effect, vector<Player*>players) { 
    // add mana to a player's pool
-   // do Effect e for Card c based on TargetInfo t 
 }
 
 void doDamageEffect(Move* m, Card* card, Effect* effect, vector<Player*>players) {
@@ -31,7 +70,7 @@ void doDamageEffect(Move* m, Card* card, Effect* effect, vector<Player*>players)
       }
       for (Player* p: players) {
          if (p->id() == m->targetId) {
-            cout << caster->username() <<" casts "<< card->name << " on " << p->username() << " and deals " << effect->amount << ".\n";
+            cout << caster->username() <<" casts "<< card->name() << " on " << p->username() << " and deals " << effect->amount << ".\n";
             p->decrementLife(effect->amount);
          }
       } 
@@ -39,8 +78,8 @@ void doDamageEffect(Move* m, Card* card, Effect* effect, vector<Player*>players)
    if (m->targetType == creature) {
       for (Player* p: players) {
          for (Card* c: p->inPlay()) {
-            if (c->id == m->targetId) {
-               cout << "Implement bolt a creature";
+            if (c->id() == m->targetId) {
+               c->takeDamage(p, effect->amount);
             }
          } 
       } 
@@ -49,9 +88,7 @@ void doDamageEffect(Move* m, Card* card, Effect* effect, vector<Player*>players)
 
 Card* Card::mountain() {
    // make a card with one effect
-   Card* m = new Card();
-   m->name = Mountain;
-   m->cardType = Land;
+   Card* m = new Card(Mountain, Land);
    Effect* mManaEffect = new Effect();
    mManaEffect->name = mana_red;
    mManaEffect->amount = 1;
@@ -64,9 +101,7 @@ Card* Card::mountain() {
 
 Card* Card::forest() {
    // make a card with one effect
-   Card* m = new Card();
-   m->name = Forest;
-   m->cardType = Land;
+   Card* m = new Card(Forest, Land);
    Effect* mManaEffect = new Effect();
    mManaEffect->name = mana_green;
    mManaEffect->amount = 1;
@@ -78,11 +113,9 @@ Card* Card::forest() {
 };
 
 Card* Card::grizzly_bear() {
-   Card* bear = new Card();
-   bear->name = GrizzlyBear;
-   bear->cardType = Creature;
-   bear->power = 2;
-   bear->toughness = 2;
+   Card* bear = new Card(GrizzlyBear, Creature);
+   bear->setPower(2);
+   bear->toughness_ = 2;
    map<mana_type, int> manaCost;
    manaCost[green] = 1;
    manaCost[colorless] = 1;
@@ -90,16 +123,18 @@ Card* Card::grizzly_bear() {
    return bear;
 };
 
+void Card::setPower(int newPower) {
+   power_ = newPower;
+}
+
 Card* Card::lightning_bolt() {
    // make a card with one effect
-   Card* bolt = new Card();
-   bolt->name = LightningBolt;
-   bolt->cardType = Instant;
+   Card* bolt = new Card(LightningBolt, Instant);
    map<mana_type, int> manaCost;
    manaCost[red] = 1;
    bolt->manaCost = manaCost;
    Effect* damageEffect = new Effect();
-   damageEffect->name = damage;
+   damageEffect->name = effect_name::damage;
    damageEffect->amount = 3;
    damageEffect->targetType = any_player_or_creature;
    damageEffect->trigger = cast_this;

@@ -1,0 +1,23 @@
+{
+    "files.associations": {
+        "__bit_reference": "cpp",
+        "__hash_table": "cpp",
+        "__string": "cpp",
+        "__tree": "cpp",
+        "map": "cpp",
+        "string": "cpp",
+        "string_view": "cpp",
+        "unordered_map": "cpp",
+        "*.tcc": "cpp",
+        "__split_buffer": "cpp",
+        "deque": "cpp",
+        "vector": "cpp",
+        "iostream": "cpp",
+        "array": "cpp",
+        "bitset": "cpp",
+        "initializer_list": "cpp",
+        "queue": "cpp",
+        "random": "cpp",
+        "utility": "cpp"
+    }
+}
