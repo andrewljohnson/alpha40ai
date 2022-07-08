@@ -158,15 +158,14 @@ class Game {
       }
    }
    /*
-     Print out all ways for attackers to be blocked. blockAssignments maps ids of attackers to 
-     vectors of defender ids for which blocks have already been chosen. defenders/defendersIterator specify
-     defenders that could block any of the attackers. This method iterates over all ways to choose blocks for 
-     the remaining defenders.
+     Add moves to this.moves_ for all ways attackers to be blocked. blockAssignments maps ids of attackers to 
+     vectors of defender ids for which blocks have already been chosen. defenders specify defenders that 
+     could block any of the attackers and defendersIterator specifies which defenders haven't bee allocated 
+     yet. This method iterates over all ways to choose blocks for the remaining defenders.
 
      example input: groupDefenders({0:[2 3] 1:[4 5]}, [6 7 8 9], 3)
-      
-     output:
-
+   
+     output: adds 3 select_defenders moves to this.moves_:
       0: 2 3
       1: 4 5
       
@@ -176,14 +175,20 @@ class Game {
       0: 2 3
       1: 4 5 9
    */
-   void groupDefenders(map<int, vector<int>> blockAssignments, const vector<int>& defenders, vector<int>::iterator defendersIterator) {
-      int x = 0;
-      for (auto const& x : blockAssignments) {
-         cout << x.first << ": ";
-         for (int defender:x.second) {
-            cout << defender << " ";
+   void groupDefenders(map<int, vector<int>>& blockAssignments, const vector<int>& defenders, vector<int>::iterator defendersIterator) {
+
+      // todo: just pass in to the function whether this is the first iteration instead of checking for empty blocks
+      bool isEmpty = true;
+      for (auto const& block : blockAssignments) {
+         if (block.second.size() > 0) {
+            isEmpty = false;
          }
-         cout << "\n";
+      }
+      
+      if (!isEmpty) {
+         Move *moveDefend = new Move(select_defenders, 0, playerWithPriority()->id());
+         moveDefend->blocks = blockAssignments;
+         moves_.push_back(moveDefend);
       }
 
       if(defendersIterator == defenders.end()) {
@@ -192,11 +197,8 @@ class Game {
       
       // choose all the possible ways that defenders[indexOfDefender] can be allocated, and print out each of them.
       for (auto& attacker : blockAssignments) {
-         // push a defender into blockAssignments
          attacker.second.push_back(*defendersIterator);
-         // recurse to print it and continue to push more defenders recursively
          groupDefenders(blockAssignments, defenders, ++defendersIterator);
-         // pop the defender so it can be pushed to the next possible attacker in blockAssignments when looping
          attacker.second.pop_back();
       }
    }
@@ -205,6 +207,7 @@ class Game {
       if (!playerWithoutPriority()->currentAttack()) {
          return moves;         
       }
+      moves_ = moves;
       map<int, vector<int>> blockAssignments;
       vector<int> defenders;
       for(int attackerId: playerWithoutPriority()->currentAttack()->attackerIds) {
@@ -219,28 +222,22 @@ class Game {
       }
       vector<int>::iterator defenderIterator = defenders.begin();
       groupDefenders(blockAssignments, defenders, defenderIterator);
-
-      map<int, int> blocks;
-      for (Card* defendingCreature: playerWithPriority()->creatures()) {
-         if (defendingCreature->tapped) {
-            continue;
-         }
-         defenders.push_back(defendingCreature->id());
-         for(int attackerId: playerWithoutPriority()->currentAttack()->attackerIds) {
-            if (blocks.find(attackerId) == blocks.end()) {
-               blocks[attackerId] = defendingCreature->id();
-               break;
-            }
-         }
-      }
-
-      if (blocks.size() > 0) {
-         Move* moveDefend = new Move(select_defenders, 0, playerWithPriority()->id());
-         moveDefend->blocks = blocks;
-         moves.push_back(moveDefend);
-      }
+      moves = moves_;
 
       return moves;
+   }
+
+   void printBlockMoves(vector<Move*>moves) {
+      for (Move* move: moves) {
+         cout << move->moveType << "\n";
+         for (auto const& x : move->blocks) {
+            cout << x.first << ": ";
+            for (int defender:x.second) {
+               cout << defender << " ";
+            }
+            cout << "\n";
+         }
+      }
    }
 
    vector<Move*> addPlayPermanentMoves(vector<Move*> moves) {

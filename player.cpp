@@ -171,8 +171,10 @@ void Player::playMove(Move* move, vector<Player*>players, int turn) {
          if (move->blocks.find(aid) != move->blocks.end()) {
             Card *defender;
             for (Card* creature:creatures()) {
-               if (creature->id() == move->blocks[aid]) {
-                  defender = creature;
+               for(int defenderId:move->blocks[aid]) {
+                  if (creature->id() == defenderId) {
+                     defender = creature;
+                  }
                }
             } 
             cout << defender->name() << " blocks " << attacker->name() << ".\n";

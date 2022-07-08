@@ -12,7 +12,7 @@ class Move {
    int playerId;
    int cardId;
    int targetId;
-   map<int, int> blocks;
+   map<int, vector<int>> blocks;
    move_type moveType;
    target_type targetType;
    vector<int> attackerIds;
