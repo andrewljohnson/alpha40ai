@@ -50,6 +50,7 @@ ostream& operator<<(ostream& out, const move_type value){
         PROCESS_VAL(select_defenders);     
         PROCESS_VAL(select_card);     
         PROCESS_VAL(select_card_with_targets);     
+        PROCESS_VAL(select_land);     
     }
 #undef PROCESS_VAL
     return out << s;

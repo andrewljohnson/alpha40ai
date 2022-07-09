@@ -50,7 +50,8 @@ enum move_type : int  {
    select_attackers,
    select_defenders,
    select_card,
-   select_card_with_targets
+   select_card_with_targets,
+   select_land
 };
 
 enum mana_type : int  {

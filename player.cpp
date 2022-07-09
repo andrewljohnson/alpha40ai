@@ -185,7 +185,7 @@ void Player::playMove(Move* move, vector<Player*>players, int turn) {
          }
       }
       opponent->setCurrentAttack(0);      
-   } else if (move->moveType == select_card || move->moveType == select_card_with_targets) {
+   } else if (move->moveType == select_land || move->moveType == select_card || move->moveType == select_card_with_targets) {
       int cardIndex = 0;
       for(int x=0;x<hand_.size();x++) {
          if (hand_[x]->id() == move->cardId) {
@@ -194,15 +194,15 @@ void Player::playMove(Move* move, vector<Player*>players, int turn) {
          }
       }
       Card* card = hand_[cardIndex];
-      if (move->moveType == select_card) {
+      if (move->moveType == select_land || move->moveType == select_card) {
          cout << username_ << " plays a " << card->name() << ".\n";
          card->turnPlayed = turn;
          inPlay_.push_back(card);
          hand_.erase(hand_.begin() + cardIndex);
-         if (card->cardType() == Land) {
+         if (move->moveType == select_land) {
             landsPlayedThisTurn_++;
          }            
-         if (card->cardType() == Creature) {
+         if (move->moveType == select_card) {
             payMana(card->manaCost);
          }
       }

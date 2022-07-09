@@ -31,6 +31,8 @@ class Game {
 
    vector<Move*> moves_;
 
+   vector<Move*> stack_;
+
    public:
 
    int turn() {
@@ -177,15 +179,8 @@ class Game {
    */
    void groupDefenders(map<int, vector<int>>& blockAssignments, const vector<int>& defenders, vector<int>::iterator defendersIterator) {
 
-      // todo: just pass in to the function whether this is the first iteration instead of checking for empty blocks
-      bool isEmpty = true;
-      for (auto const& block : blockAssignments) {
-         if (block.second.size() > 0) {
-            isEmpty = false;
-         }
-      }
-      
-      if (!isEmpty) {
+      // don't include the move where all attackers are unblocked... that is covered by a "pass" move that gets added elsewhere
+      if (defendersIterator != defenders.begin()) {
          Move *moveDefend = new Move(select_defenders, 0, playerWithPriority()->id());
          moveDefend->blocks = blockAssignments;
          moves_.push_back(moveDefend);
@@ -249,7 +244,7 @@ class Game {
          bool isPlayableLand = card->cardType() == Land && playerWithPriority()->landsPlayedThisTurn() < playerWithPriority()->landsPlayableThisTurn();
          bool isPlayableCreature = card->cardType() == Creature && playerWithPriority()->canAffordManaCost(card->manaCost);
          if (isPlayableLand || isPlayableCreature) {
-            Move* move = new Move(select_card, card->id(), playerWithPriority()->id());
+            Move* move = new Move(isPlayableLand ? select_land : select_card, card->id(), playerWithPriority()->id());
             cardNamesWithMoves[card->name()] = true;
             moves.push_back(move);
          }
