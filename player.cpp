@@ -1,5 +1,6 @@
 #include "player.h"
 #include "move.h"
+#include "game.h"
 #include "card.h"
 #include "enums.h"
 #include <algorithm>
@@ -9,6 +10,11 @@ using namespace std;
 int id_;
 string username_;
 
+vector<Card*> hand_;
+vector<Card*> graveyard_;
+vector<Card*> library_;
+vector<Card*> inPlay_;
+
 Player::Player(int playerId, string playerUsername) {
    id_ = playerId;
    username_ = playerUsername;
@@ -16,11 +22,6 @@ Player::Player(int playerId, string playerUsername) {
    life_ = 20;
    drewFromEmptyLibrary_ = false;
 }
-
-vector<Card*> hand_;
-vector<Card*> graveyard_;
-vector<Card*> library_;
-vector<Card*> inPlay_;
 
 vector<Card*> Player::hand()  { return hand_; }
 vector<Card*> Player::library()  { return library_; }
@@ -35,6 +36,7 @@ vector<Card*> Player::creatures()  {
    }
    return creatures; 
 }
+
 vector<Card*> Player::lands()  { 
    vector<Card*> lands;
    for (Card* inPlayCard: inPlay_) {
@@ -150,18 +152,18 @@ Player* Player::opponent_(vector<Player*>players) {
    return opponent;
 }
 
-void Player::playMove(Move* move, vector<Player*>players, int turn) {
+void Player::playMove(Move* move, Game *game) {
    switch(move->moveType) {
       case select_attackers:
-         playMoveSelectAttackers_(move, players, turn);
+         playMoveSelectAttackers_(move, game->players(), game->turn());
          break;             
       case select_defenders:
-         playMoveSelectDefenders_(move, players, turn);
+         playMoveSelectDefenders_(move, game->players(), game->turn());
          break;             
       case select_land:
       case select_card:
       case select_card_with_targets:
-         playMoveSelectHandCard_(move, players, turn);
+         playMoveSelectHandCard_(move, game->players(), game->turn());
          break;             
       case pass:
          // this case is never called, all logic for the pass move is handled by the caller in alpha40.cpp
@@ -226,17 +228,22 @@ void Player::playMoveSelectHandCard_(Move* move, vector<Player*>players, int tur
    }
    Card* card = hand_[cardIndex];
    if (move->moveType == select_land || move->moveType == select_card) {
-      cout << username_ << " plays " << card->name() << ".\n";
-      card->turnPlayed = turn;
-      inPlay_.push_back(card);
-      hand_.erase(hand_.begin() + cardIndex);
       if (move->moveType == select_land) {
+         cout << username_ << " plays " << card->name() << ".\n";
          landsPlayedThisTurn_++;
+         card->turnPlayed = turn;
+         inPlay_.push_back(card);
+         hand_.erase(hand_.begin() + cardIndex);
       }            
       if (move->moveType == select_card) {
+         cout << username_ << " starts to play " << card->name() << ".\n";
          payMana(card->manaCost);
+         card->turnPlayed = turn;
+         inPlay_.push_back(card);
+         hand_.erase(hand_.begin() + cardIndex);
       }
    }
+   // todo: stack
    if (move->moveType == select_card_with_targets) {
          map<mana_type, int> manaCost = card->manaCost;
          for ( const auto &p : manaCost )

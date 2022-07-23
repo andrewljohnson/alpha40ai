@@ -7,8 +7,11 @@
 using namespace std;
 
 class Card;
+class Game;
 class Move;
+
 enum mana_type :  int;
+
 
 class Player {
    private:
@@ -56,7 +59,7 @@ class Player {
    void decrementLife(int life);
    void drawCard ();
    void payMana(map<mana_type, int> manaCost);
-   void playMove(Move* move, vector<Player*>players, int turn);
+   void playMove(Move* move, Game *game);
    void resetLandsPlayedThisTurn();
    void setCurrentAttack(Move *move);
    void untapPermanents();

@@ -4,11 +4,13 @@ An AI to play Magic: The Gathering, focused on the Alpha 40 format.
 
 # Play a Game
 
-     c++ alpha40.cpp card.cpp player.cpp enums.cpp -std=c++11 -o alpha40 && ./alpha40 
+     c++ alpha40.cpp card.cpp game.cpp player.cpp enums.cpp -std=c++11 -o alpha40ai && ./alpha40ai 
 
 # Todo
- * implement all moves as do the move without passing
  * implement add*Moves methods using ref for moves
+ * implement stack
+ * implement instants before attackers
+ * implement instants before blockers
 
 later
  * test respond to yours/theirs lightning bolts
