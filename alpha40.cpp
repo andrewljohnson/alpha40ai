@@ -168,7 +168,7 @@ class Game {
          moves_ = moves;
          // create all possible attack moves for attack sizes between 0 and readyCreatures.size()
          for (auto it = readyCreatures.begin(); it <= readyCreatures.end(); ++it) {
-            generateAttackMoves(readyCreatures.begin(), it, readyCreatures, attack);
+            groupAttackers(readyCreatures.begin(), it, readyCreatures, attack);
          }
          // printAttackMoves(moves_);
          moves = moves_;
@@ -177,61 +177,6 @@ class Game {
          reverse(moves.begin(), moves.end());
       }
       return moves;
-   }
-
-   /*
-   */
-   void generateAttackMoves(vector<Card*>::iterator begin, vector<Card*>::iterator end, vector<Card*>&readyCreatures, vector<int>& attack) {
-      if (end == readyCreatures.begin()) {
-         if (attack.size() > 0) {
-            Move *moveAttack = new Move(select_attackers, 0, playerWithPriority()->id());
-            moveAttack->attackerIds = attack;
-            moves_.push_back(moveAttack);
-         }
-         return;
-      }
-      for (auto it = begin; it <= readyCreatures.end() - distance(readyCreatures.begin(), end); ++it) {
-         attack.push_back((*it)->id());
-         generateAttackMoves(it + 1, end - 1, readyCreatures, attack);
-         attack.pop_back();
-      }
-   }
-
-   /*
-     Add moves to this.moves_ for all ways attackers to be blocked. blockAssignments maps ids of attackers to 
-     vectors of defender ids for which blocks have already been chosen. defenders specify defenders that 
-     could block any of the attackers and defendersIterator specifies which defenders haven't bee allocated 
-     yet. This method iterates over all ways to choose blocks for the remaining defenders.
-
-     example input: groupDefenders({0:[2 3] 1:[4 5]}, [6 7 8 9], 3)
-   
-     output: adds 3 select_defenders moves to this.moves_:
-      0: 2 3
-      1: 4 5
-      
-      0: 2 3 9
-      1: 4 5
-      
-      0: 2 3
-      1: 4 5 9
-   */
-   void groupDefenders(map<int, vector<int>>& blockAssignments, const vector<int>& defenders, vector<int>::iterator defendersIterator) {
-      // don't include the move where all attackers are unblocked... that is covered by a "pass" move that gets added elsewhere
-      if (defendersIterator - defenders.begin() != 0) {
-         Move *moveDefend = new Move(select_defenders, 0, playerWithPriority()->id());
-         moveDefend->blocks = blockAssignments;
-         moves_.push_back(moveDefend);
-      }
-      if(defenders.end() - defendersIterator <= 0) {
-         return;
-      }
-      
-      // choose all the possible ways that defenders[indexOfDefender] can be allocated, and print out each of them.
-      for (auto& attacker : blockAssignments) {
-         attacker.second.push_back(*defendersIterator);
-         groupDefenders(blockAssignments, defenders, ++defendersIterator);
-         attacker.second.pop_back();
-      }
    }
 
    vector<Move*> addDefenseMoves(vector<Move*> moves) {
@@ -256,6 +201,62 @@ class Game {
       moves = moves_;
 
       return moves;
+   }
+
+   /*
+   */
+   void groupAttackers(vector<Card*>::iterator begin, vector<Card*>::iterator end, vector<Card*>&readyCreatures, vector<int>& attack) {
+      if (end == readyCreatures.begin()) {
+         if (attack.size() > 0) {
+            Move *moveAttack = new Move(select_attackers, 0, playerWithPriority()->id());
+            moveAttack->attackerIds = attack;
+            moves_.push_back(moveAttack);
+         }
+         return;
+      }
+      for (auto it = begin; it <= readyCreatures.end() - distance(readyCreatures.begin(), end); ++it) {
+         attack.push_back((*it)->id());
+         groupAttackers(it + 1, end - 1, readyCreatures, attack);
+         attack.pop_back();
+      }
+   }
+
+   /*
+     Add moves to this.moves_ for all ways attackers to be blocked. blockAssignments maps ids of attackers to 
+     vectors of defender ids for which blocks have already been chosen. defenders specify defenders that 
+     could block any of the attackers and defendersIterator specifies which defenders haven't bee allocated 
+     yet. This method iterates over all ways to choose blocks for the remaining defenders.
+
+     example input: groupDefenders({0:[2 3] 1:[4 5]}, [6 7 8 9], 3)
+   
+     output: adds 3 select_defenders moves to this.moves_:
+      0: 2 3
+      1: 4 5
+      
+      0: 2 3 9
+      1: 4 5
+      
+      0: 2 3
+      1: 4 5 9
+   */
+
+   void groupDefenders(map<int, vector<int>>& blockAssignments, const vector<int>& defenders, vector<int>::iterator defendersIterator) {
+      // don't include the move where all attackers are unblocked... that is covered by a "pass" move that gets added elsewhere
+      if (defendersIterator - defenders.begin() != 0) {
+         Move *moveDefend = new Move(select_defenders, 0, playerWithPriority()->id());
+         moveDefend->blocks = blockAssignments;
+         moves_.push_back(moveDefend);
+      }
+      if(defenders.end() - defendersIterator <= 0) {
+         return;
+      }
+      
+      // choose all the possible ways that defenders[indexOfDefender] can be allocated, and print out each of them.
+      for (auto& attacker : blockAssignments) {
+         attacker.second.push_back(*defendersIterator);
+         groupDefenders(blockAssignments, defenders, ++defendersIterator);
+         attacker.second.pop_back();
+      }
    }
 
    void printAttackMoves(vector<Move*>moves) {
