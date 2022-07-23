@@ -1,4 +1,9 @@
-alpha40
+# ignore binary files that you might accidentally make in vscode
+alpha40ai
+card
+game
+player
+
 .DS_Store
 
 # Prerequisites

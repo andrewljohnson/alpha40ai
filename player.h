@@ -1,8 +1,8 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#include <string>
 #include <map>
+#include <string>
 #include <vector>
 using namespace std;
 
@@ -14,7 +14,9 @@ enum mana_type :  int;
 
 
 class Player {
+   
    private:
+   
    int id_;
    string username_;
 
@@ -29,12 +31,16 @@ class Player {
    int landsPlayedThisTurn_;
    Move* currentAttack_;
    
-   void playMoveSelectAttackers_(Move* move, vector<Player*>players, int turn);
-   void playMoveSelectDefenders_(Move* move, vector<Player*>players, int turn);
-   void playMoveSelectHandCard_(Move* move, vector<Player*>players, int turn);
+   void playMoveSelectAttackers_(Move* move, Game* game);
+   void playMoveSelectDefenders_(Move* move, Game* game);
+   void playMoveSelectHandCard_(Move* move, Game* game);
    Player* opponent_(vector<Player*>players);
+   void setCurrentAttack_(Move *move);
+   void payMana_(map<mana_type, int> manaCost);
 
+   
    public:
+   
    Player(int playerId, string playerUsername);
    bool canAffordManaCost(map<mana_type, int> manaCost);
    bool canAffordAndTarget(Card* card);
@@ -58,10 +64,8 @@ class Player {
    void bury(Card *permanent);
    void decrementLife(int life);
    void drawCard ();
-   void payMana(map<mana_type, int> manaCost);
    void playMove(Move* move, Game *game);
    void resetLandsPlayedThisTurn();
-   void setCurrentAttack(Move *move);
    void untapPermanents();
 }; 
 

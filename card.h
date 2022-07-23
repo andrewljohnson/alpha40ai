@@ -1,13 +1,16 @@
 #ifndef CARD_H
 #define CARD_H
 
+#include <map>
+#include <vector>
+using namespace std;
+
+#include "enums.h"
+
 class Card;
 class Move;
 class Player;
-#include <map>
-#include <vector>
-#include "enums.h"
-using namespace std;
+
 
 // a struct, based on player actions, that gets passed into an EffectDef function
 struct TargetInfo {             

@@ -11,6 +11,8 @@ using namespace std;
 #include "player.h"
 
 
+// public 
+
 Game::Game() {
    indexOfPlayerWithPriority_ = 0;
    lastCardId_ = 0;
@@ -27,14 +29,8 @@ int Game::turn() {
    return turn_;
 }
 
-void Game::addPlayer (Player* p) {
+void Game::addPlayer(Player* p) {
    players_.push_back(p);
-}   
-
-void Game::addCard (Card* c, Player* p) {
-   c->setId(lastCardId_);
-   lastCardId_++;
-   p->addCardToLibrary(c);
 }   
 
 void Game::makeDecks() {
@@ -43,19 +39,19 @@ void Game::makeDecks() {
    Player* p2 = players_[1];
    for (int x=0; x<deckSize; x++) {
       if (x % 3 == 0 && x % 2 == 0) {
-         addCard(Card::forest(), p1);
-         addCard(Card::forest(), p2);
+         addCard_(Card::forest(), p1);
+         addCard_(Card::forest(), p2);
       } else if (x % 3 == 0) {
-         addCard(Card::mountain(), p1);
-         addCard(Card::mountain(), p2);
+         addCard_(Card::mountain(), p1);
+         addCard_(Card::mountain(), p2);
       } else if (x % 2 == 0) {
          // addCard(Card::lightning_bolt(), p1);
          // addCard(Card::lightning_bolt(), p2);            
       } else if (x % 5 == 0) {
          // addCard(Card::grizzly_bear(), p1);
       } else {
-         addCard(Card::grizzly_bear(), p1);
-         addCard(Card::grizzly_bear(), p2);            
+         addCard_(Card::grizzly_bear(), p1);
+         addCard_(Card::grizzly_bear(), p2);            
       }
    }
 
@@ -70,8 +66,6 @@ void Game::makeDecks() {
       cout << players_[1]->library()[x]->name() << "(" << players_[1]->library()[x]->id() << ") ";
    }
    cout <<"\n\n";
-
-
 }
 
 void Game::drawOpeningHands() {
@@ -123,30 +117,55 @@ void Game::printGameStatus() {
 }
 
 void Game::printValidMoves() {
-   cout << playerWithPriority()->username() << "'s valid moves in " << gameStep_ << ": ";
-   for (Move* move: validMoves()) {
+   cout << playerWithPriority_()->username() << "'s valid moves in " << gameStep_ << ": ";
+   for (Move* move: validMoves_()) {
       cout << "(" << move->moveType << ", " << move->cardId << ", " << move->playerId << "), ";
    }   
    cout << "\n";   
 }
 
-Player* Game::playerWithPriority() {
+void Game::playRandomMove() {
+   vector<Move*> moves = validMoves_();
+   // use arc4random() instead if we want to change the seed each run on Mac 
+   // playMove(moves[rand() % moves. size()]);
+   // cout << moves[0]->playerId << " ABOUT TO PLAY MOVE " << moves[0]->moveType << " in step " << gameStep_ << endl;
+   playMove_(moves[0]);
+}
+
+bool Game::isOver() {
+   if (players_[0]->life() <= 0) return true;
+   if (players_[1]->life() <= 0) return true;
+   if (players_[0]->didDrawFromEmptyLibrary()) return true;
+   if (players_[1]->didDrawFromEmptyLibrary()) return true;
+   return false;
+}
+
+
+// private
+
+void Game::addCard_(Card* c, Player* p) {
+   c->setId(lastCardId_);
+   lastCardId_++;
+   p->addCardToLibrary(c);
+}   
+
+Player* Game::playerWithPriority_() {
    return players_[indexOfPlayerWithPriority_];
 }
 
-Player* Game::playerWithoutPriority() {
+Player* Game::playerWithoutPriority_() {
    if (indexOfPlayerWithPriority_ == 0) return players_[1];
    return players_[0];
 }
 
-Player* Game::turnPlayer() {
+Player* Game::turnPlayer_() {
    if( turn_ % 2 == 0) return players_[0];
    return players_[1];
 }
 
-vector<Move*> Game::addAttackMoves(vector<Move*> moves) {
+vector<Move*> Game::addAttackMoves_(vector<Move*> moves) {
    vector <Card*> readyCreatures;
-   for (Card* card: playerWithPriority()->creatures()) {
+   for (Card* card: playerWithPriority_()->creatures()) {
       if (!card->tapped && card->turnPlayed < turn_) {
          readyCreatures.push_back(card);
       }
@@ -156,7 +175,7 @@ vector<Move*> Game::addAttackMoves(vector<Move*> moves) {
       moves_ = moves;
       // create all possible attack moves for attack sizes between 0 and readyCreatures.size()
       for (auto it = readyCreatures.begin(); it <= readyCreatures.end(); ++it) {
-         groupAttackers(readyCreatures.begin(), it, readyCreatures, attack);
+         groupAttackers_(readyCreatures.begin(), it, readyCreatures, attack);
       }
       // printAttackMoves(moves_);
       moves = moves_;
@@ -167,25 +186,25 @@ vector<Move*> Game::addAttackMoves(vector<Move*> moves) {
    return moves;
 }
 
-vector<Move*> Game::addDefenseMoves(vector<Move*> moves) {
-   if (!playerWithoutPriority()->currentAttack()) {
+vector<Move*> Game::addDefenseMoves_(vector<Move*> moves) {
+   if (!playerWithoutPriority_()->currentAttack()) {
       return moves;         
    }
    moves_ = moves;
    map<int, vector<int>> blockAssignments;
    vector<int> defenders;
-   for(int attackerId: playerWithoutPriority()->currentAttack()->attackerIds) {
+   for(int attackerId: playerWithoutPriority_()->currentAttack()->attackerIds) {
       vector<int> attackerBucket;
       blockAssignments[attackerId] = attackerBucket;
    }
-   for (Card* defendingCreature: playerWithPriority()->creatures()) {
+   for (Card* defendingCreature: playerWithPriority_()->creatures()) {
       if (defendingCreature->tapped) {
          continue;
       }
       defenders.push_back(defendingCreature->id());
    }
    vector<int>::iterator defenderIterator = defenders.begin();
-   groupDefenders(blockAssignments, defenders, defenders.begin());
+   groupDefenders_(blockAssignments, defenders, defenders.begin());
    moves = moves_;
 
    return moves;
@@ -193,10 +212,10 @@ vector<Move*> Game::addDefenseMoves(vector<Move*> moves) {
 
 /*
 */
-void Game::groupAttackers(vector<Card*>::iterator begin, vector<Card*>::iterator end, vector<Card*>&readyCreatures, vector<int>& attack) {
+void Game::groupAttackers_(vector<Card*>::iterator begin, vector<Card*>::iterator end, vector<Card*>&readyCreatures, vector<int>& attack) {
    if (end == readyCreatures.begin()) {
       if (attack.size() > 0) {
-         Move *moveAttack = new Move(select_attackers, 0, playerWithPriority()->id());
+         Move *moveAttack = new Move(select_attackers, 0, playerWithPriority_()->id());
          moveAttack->attackerIds = attack;
          moves_.push_back(moveAttack);
       }
@@ -204,7 +223,7 @@ void Game::groupAttackers(vector<Card*>::iterator begin, vector<Card*>::iterator
    }
    for (auto it = begin; it <= readyCreatures.end() - distance(readyCreatures.begin(), end); ++it) {
       attack.push_back((*it)->id());
-      groupAttackers(it + 1, end - 1, readyCreatures, attack);
+      groupAttackers_(it + 1, end - 1, readyCreatures, attack);
       attack.pop_back();
    }
 }
@@ -228,10 +247,10 @@ void Game::groupAttackers(vector<Card*>::iterator begin, vector<Card*>::iterator
    1: 4 5 9
 */
 
-void Game::groupDefenders(map<int, vector<int>>& blockAssignments, const vector<int>& defenders, vector<int>::iterator defendersIterator) {
+void Game::groupDefenders_(map<int, vector<int>>& blockAssignments, const vector<int>& defenders, vector<int>::iterator defendersIterator) {
    // don't include the move where all attackers are unblocked... that is covered by a "pass" move that gets added elsewhere
    if (defendersIterator - defenders.begin() != 0) {
-      Move *moveDefend = new Move(select_defenders, 0, playerWithPriority()->id());
+      Move *moveDefend = new Move(select_defenders, 0, playerWithPriority_()->id());
       moveDefend->blocks = blockAssignments;
       moves_.push_back(moveDefend);
    }
@@ -243,12 +262,12 @@ void Game::groupDefenders(map<int, vector<int>>& blockAssignments, const vector<
    // choose all the possible ways that defenders[indexOfDefender] can be allocated
    for (auto& attacker : blockAssignments) {
       attacker.second.push_back(*defendersIterator);
-      groupDefenders(blockAssignments, defenders, ++defendersIterator);
+      groupDefenders_(blockAssignments, defenders, ++defendersIterator);
       attacker.second.pop_back();
    }
 }
 
-void Game::printAttackMoves(vector<Move*>moves) {
+void Game::printAttackMoves_(vector<Move*>moves) {
    for (Move* move: moves) {
       cout << move->moveType << "\n";
       for (int x : move->attackerIds) {
@@ -258,7 +277,7 @@ void Game::printAttackMoves(vector<Move*>moves) {
    }
 }
 
-void Game::printBlockMoves(vector<Move*>moves) {
+void Game::printBlockMoves_(vector<Move*>moves) {
    for (Move* move: moves) {
       cout << move->moveType << "\n";
       for (auto const& x : move->blocks) {
@@ -271,16 +290,16 @@ void Game::printBlockMoves(vector<Move*>moves) {
    }
 }
 
-vector<Move*> Game::addPlayPermanentMoves(vector<Move*> moves) {
+vector<Move*> Game::addPlayPermanentMoves_(vector<Move*> moves) {
    map<card_name, bool> cardNamesWithMoves;
-   for (Card* card: playerWithPriority()->hand()) {
+   for (Card* card: playerWithPriority_()->hand()) {
       if (cardNamesWithMoves[card->name()]) {
          continue;
       }
-      bool isPlayableLand = card->cardType() == Land && playerWithPriority()->landsPlayedThisTurn() < playerWithPriority()->landsPlayableThisTurn();
-      bool isPlayableCreature = card->cardType() == Creature && playerWithPriority()->canAffordManaCost(card->manaCost);
+      bool isPlayableLand = card->cardType() == Land && playerWithPriority_()->landsPlayedThisTurn() < playerWithPriority_()->landsPlayableThisTurn();
+      bool isPlayableCreature = card->cardType() == Creature && playerWithPriority_()->canAffordManaCost(card->manaCost);
       if (isPlayableLand || isPlayableCreature) {
-         Move* move = new Move(isPlayableLand ? select_land : select_card, card->id(), playerWithPriority()->id());
+         Move* move = new Move(isPlayableLand ? select_land : select_card, card->id(), playerWithPriority_()->id());
          cardNamesWithMoves[card->name()] = true;
          moves.push_back(move);
       }
@@ -288,23 +307,23 @@ vector<Move*> Game::addPlayPermanentMoves(vector<Move*> moves) {
    return moves;
 }
 
-vector<Move*> Game::addInstantMoves(vector<Move*> moves) {
+vector<Move*> Game::addInstantMoves_(vector<Move*> moves) {
    map<card_name, bool> cardNamesWithMoves;
-   for (Card* card: playerWithPriority()->hand()) {
+   for (Card* card: playerWithPriority_()->hand()) {
       if (cardNamesWithMoves[card->name()]) {
          continue;
       }
       // instants
-      if (card->cardType() == Instant && playerWithPriority()->canAffordAndTarget(card)) {
+      if (card->cardType() == Instant && playerWithPriority_()->canAffordAndTarget(card)) {
          cardNamesWithMoves[card->name()] = true;
          if (card->effects[0]->targetType == any_player_or_creature) {
-            Move* moveOpponent = new Move(select_card_with_targets, card->id(), playerWithPriority()->id());
-            moveOpponent->targetId = playerWithoutPriority()->id(); 
+            Move* moveOpponent = new Move(select_card_with_targets, card->id(), playerWithPriority_()->id());
+            moveOpponent->targetId = playerWithoutPriority_()->id(); 
             moveOpponent->targetType = player; 
             moves.push_back(moveOpponent);
 
-            Move* moveSelf = new Move(select_card_with_targets, card->id(), playerWithPriority()->id());
-            moveSelf->targetId = playerWithPriority()->id(); 
+            Move* moveSelf = new Move(select_card_with_targets, card->id(), playerWithPriority_()->id());
+            moveSelf->targetId = playerWithPriority_()->id(); 
             moveSelf->targetType = player; 
             moves.push_back(moveSelf);
 
@@ -313,7 +332,7 @@ vector<Move*> Game::addInstantMoves(vector<Move*> moves) {
                   if (permanent->cardType() != Creature) {
                      continue;
                   }
-                  Move* moveCreature = new Move(select_card_with_targets, card->id(), playerWithPriority()->id());
+                  Move* moveCreature = new Move(select_card_with_targets, card->id(), playerWithPriority_()->id());
                   moveCreature->targetId = permanent->id(); 
                   moveCreature->targetType = creature; 
                   moves.push_back(moveCreature);
@@ -326,58 +345,58 @@ vector<Move*> Game::addInstantMoves(vector<Move*> moves) {
    return moves;
 }
 
-vector<Move*> Game::addPassMove(vector<Move*> moves) {
-   Move* move = new Move(pass, 0, playerWithPriority()->id());
+vector<Move*> Game::addPassMove_(vector<Move*> moves) {
+   Move* move = new Move(pass, 0, playerWithPriority_()->id());
    moves.push_back(move);
    return moves;
 }
 
-vector<Move*> Game::validMoves() {
+vector<Move*> Game::validMoves_() {
    vector<Move*> moves;
-   if (turnPlayer()->id() == playerWithPriority()->id()) {
+   if (turnPlayer_()->id() == playerWithPriority_()->id()) {
       if (gameStep_ == attack_step) {
-         moves = addAttackMoves(moves);
+         moves = addAttackMoves_(moves);
       } else if (gameStep_ == main_first || gameStep_ == main_second) {
-         moves = addPlayPermanentMoves(moves);
+         moves = addPlayPermanentMoves_(moves);
       }
    } else {
       if (gameStep_ == attack_step) {
-         moves = addDefenseMoves(moves);
+         moves = addDefenseMoves_(moves);
       }
    }
-   moves = addInstantMoves(moves);
-   moves = addPassMove(moves);
+   moves = addInstantMoves_(moves);
+   moves = addPassMove_(moves);
    return moves;
 }
 
-void Game::passPriority() {
+void Game::passPriority_() {
    if (indexOfPlayerWithPriority_ == 0) {
       indexOfPlayerWithPriority_ = 1;
    } else indexOfPlayerWithPriority_ = 0;      
 }
 
-void Game::playMove(Move* move) {
+void Game::playMove_(Move* move) {
    if (move->moveType == pass) {
       playPassMove_(move);
    } else {
-      playerWithPriority()->playMove(move, this);
+      playerWithPriority_()->playMove(move, this);
       if (move->moveType == select_attackers) {            
-         passPriority();
+         passPriority_();
       }
       if (move->moveType == select_defenders) {
-         passPriority();
+         passPriority_();
          gameStep_ = main_second;               
       }
    }
 }
 
 void Game::playPassMove_(Move* move) {
-   passPriority();
-   if(turnPlayer()->id() != playerWithPriority()->id()) {
+   passPriority_();
+   if(turnPlayer_()->id() != playerWithPriority_()->id()) {
       return;
    }
-   if (playerWithPriority()->currentAttack()) {
-      playerWithPriority()->doUnblockedAttack(players_);
+   if (playerWithPriority_()->currentAttack()) {
+      playerWithPriority_()->doUnblockedAttack(players_);
    }
    switch(gameStep_) {
       case untap_step:
@@ -397,42 +416,24 @@ void Game::playPassMove_(Move* move) {
          break;             
       case draw_step:
          gameStep_ = draw_step;                   
-         playerWithPriority()->drawCard();
-         if (playerWithPriority()->didDrawFromEmptyLibrary()) {
+         playerWithPriority_()->drawCard();
+         if (playerWithPriority_()->didDrawFromEmptyLibrary()) {
             return;
          }
          gameStep_ = main_first;                   
          break;             
       case end_step:
-         if(turnPlayer()->hand().size() > 7) {
-            turnPlayer()->discardDown();
+         if(turnPlayer_()->hand().size() > 7) {
+            turnPlayer_()->discardDown();
          }
          printGameStatus();
-         passPriority();
+         passPriority_();
          turn_ += 1;                          
-         cout << "\n~~~ START OF TURN " << turn_ << "  (" << turnPlayer()->username() << ") ~~~\n";
+         cout << "\n~~~ START OF TURN " << turn_ << "  (" << turnPlayer_()->username() << ") ~~~\n";
          gameStep_ = untap_step;                   
-         turnPlayer()->resetLandsPlayedThisTurn();
-         turnPlayer()->untapPermanents();
+         turnPlayer_()->resetLandsPlayedThisTurn();
+         turnPlayer_()->untapPermanents();
          gameStep_ = upkeep_step;     
          break;              
    }
 }
-
-void Game::playRandomMove() {
-   vector<Move*> moves = validMoves();
-   // use arc4random() instead if we want to change the seed each run on Mac 
-   // playMove(moves[rand() % moves. size()]);
-   // cout << moves[0]->playerId << " ABOUT TO PLAY MOVE " << moves[0]->moveType << " in step " << gameStep_ << endl;
-   playMove(moves[0]);
-}
-
-bool Game::isOver() {
-   if (players_[0]->life() <= 0) return true;
-   if (players_[1]->life() <= 0) return true;
-   if (players_[0]->didDrawFromEmptyLibrary()) return true;
-   if (players_[1]->didDrawFromEmptyLibrary()) return true;
-   return false;
-}
-
-

@@ -1,10 +1,12 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include "enums.h"
 #include <map>
 #include <vector>
 using namespace std;
+
+#include "enums.h"
+
 class Card;
 class Move;
 class Player;
@@ -31,69 +33,41 @@ class Game {
 
    // a vector of players in the game
    vector<Player*> players_;
-
    vector<Move*> moves_;
-
    vector<Move*> stackMove_;
-
    vector<Card*> stackCard_;
+
+   void addCard_(Card* c, Player* p);
+   Player* playerWithPriority_();
+   Player* playerWithoutPriority_();
+   Player* turnPlayer_();
+   vector<Move*> addAttackMoves_(vector<Move*> moves);
+   vector<Move*> addDefenseMoves_(vector<Move*> moves);
+   void groupAttackers_(vector<Card*>::iterator begin, vector<Card*>::iterator end, vector<Card*>&readyCreatures, vector<int>& attack);
+   void groupDefenders_(map<int, vector<int>>& blockAssignments, const vector<int>& defenders, vector<int>::iterator defendersIterator);
+   void printAttackMoves_(vector<Move*>moves);
+   void printBlockMoves_(vector<Move*>moves);
+   vector<Move*> addPlayPermanentMoves_(vector<Move*> moves);
+   vector<Move*> addInstantMoves_(vector<Move*> moves);
+   vector<Move*> addPassMove_(vector<Move*> moves);
+   vector<Move*> validMoves_();
+   void passPriority_();
+   void playMove_(Move* move);
+   void playPassMove_(Move* move);
 
 
    public:
-   Game();
 
+   Game();
    vector<Player*> players();
    int turn();
-
-
-   void addPlayer (Player* p);
-
-   void addCard (Card* c, Player* p);
-
+   void addPlayer(Player* p);
    void makeDecks();
-
    void drawOpeningHands();
-
    void printGameStatus();
-
    void printValidMoves();
-
-   Player* playerWithPriority();
-
-   Player* playerWithoutPriority();
-
-   Player* turnPlayer();
-
-   vector<Move*> addAttackMoves(vector<Move*> moves);
-
-   vector<Move*> addDefenseMoves(vector<Move*> moves);
-
-   void groupAttackers(vector<Card*>::iterator begin, vector<Card*>::iterator end, vector<Card*>&readyCreatures, vector<int>& attack);
-
-   void groupDefenders(map<int, vector<int>>& blockAssignments, const vector<int>& defenders, vector<int>::iterator defendersIterator);
-
-   void printAttackMoves(vector<Move*>moves);
-
-   void printBlockMoves(vector<Move*>moves);
-
-   vector<Move*> addPlayPermanentMoves(vector<Move*> moves);
-
-   vector<Move*> addInstantMoves(vector<Move*> moves);
-
-   vector<Move*> addPassMove(vector<Move*> moves);
-
-   vector<Move*> validMoves();
-
-   void passPriority();
-
-   void playMove(Move* move);
-
-   void playPassMove_(Move* move);
-
    void playRandomMove();
-
    bool isOver();
-
 };
 
 #endif

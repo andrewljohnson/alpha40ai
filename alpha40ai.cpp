@@ -7,9 +7,7 @@ int main() {
    game.addPlayer(new Player(0, "Spk"));
    game.addPlayer(new Player(1, "Lee"));
    game.makeDecks();
-   cout << "made decks\n";
    game.drawOpeningHands();
-   cout << "drew hands\n";
 
    int turnsToPlay = 5;
    while (!game.isOver()) {
