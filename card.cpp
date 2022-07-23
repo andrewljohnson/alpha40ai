@@ -47,9 +47,6 @@ int Card::damage() {
 
 void Card::takeDamage(Player* owner, int newDamage) {
    damage_ += newDamage;
-   if (damage_ >= toughness_) {
-      owner->bury(this);
-   }
 }
 
 void Card::setId(int newId) {
@@ -82,7 +79,20 @@ void doDamageEffect(Move* m, Card* card, Effect* effect, vector<Player*>players)
                c->takeDamage(p, effect->amount);
             }
          } 
-      } 
+      }
+
+      Card* damagedCard;
+      Player* owner;
+      for (Player* p: players) {
+         for (Card* c: p->inPlay()) {
+            if (c->id() == m->targetId) {
+               damagedCard = c;
+            }
+         }
+      }
+      if (damagedCard->damage() >= damagedCard->toughness()) {
+         owner->bury(damagedCard);
+      }
    }
 }
 

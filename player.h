@@ -25,6 +25,11 @@ class Player {
    int landsPlayableThisTurn_;
    int landsPlayedThisTurn_;
    Move* currentAttack_;
+   
+   void playMoveSelectAttackers_(Move* move, vector<Player*>players, int turn);
+   void playMoveSelectDefenders_(Move* move, vector<Player*>players, int turn);
+   void playMoveSelectHandCard_(Move* move, vector<Player*>players, int turn);
+   Player* opponent_(vector<Player*>players);
 
    public:
    Player(int playerId, string playerUsername);

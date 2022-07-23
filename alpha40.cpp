@@ -70,6 +70,20 @@ class Game {
             addCard(Card::grizzly_bear(), p2);            
          }
       }
+
+      cout << "p1 deck: ";
+      for (int x=0; x<players_[0]->library().size(); x++) {
+         cout << players_[0]->library()[x]->name() << "(" << players_[0]->library()[x]->id() << ") ";
+      }
+      cout <<"\n\n";
+
+      cout << "p2 deck: ";
+      for (int x=0; x<players_[1]->library().size(); x++) {
+         cout << players_[1]->library()[x]->name() << "(" << players_[1]->library()[x]->id() << ") ";
+      }
+      cout <<"\n\n";
+
+
    }
 
    void drawOpeningHands() {
@@ -77,6 +91,18 @@ class Game {
          players_[0]->drawCard();
          players_[1]->drawCard();
       }
+      cout << "p1 hand: ";
+      for (int x=0; x<maxHandSize; x++) {
+         cout << players_[0]->hand()[x]->name() << " ";
+      }
+      cout <<"\n\n";
+
+      cout << "p2 hand: ";
+      for (int x=0; x<maxHandSize; x++) {
+         cout << players_[1]->hand()[x]->name() << " ";
+      }
+      cout <<"\n\n";
+
       gameStep = main_first;
       cout << "~~~ START OF TURN 0 ~~~\n";
    }
@@ -91,6 +117,20 @@ class Game {
          cout << ", " << p->lands().size() << " (lands)";
          cout << ", " << p->graveyard().size() << " (grave)";
          cout << ", " << p->hand().size() << " (hand).\n";
+         if (p->lands().size() > 0) {
+            cout << "  ";
+            for (Card *land:p->lands()) {
+               cout << land->name() << " (" << land->id() << ") ";
+            }
+            cout << "\n";
+         }
+         if (p->creatures().size() > 0) {
+            cout << "  ";
+            for (Card *creature:p->creatures()) {
+               cout << creature->name() << " (" << creature->id() << ") ";
+            }
+            cout << "\n";
+         }
       }
    }
 
@@ -117,48 +157,46 @@ class Game {
    }
 
    vector<Move*> addAttackMoves(vector<Move*> moves) {
-      vector <int> attackableCreatureIds;
+      vector <Card*> readyCreatures;
       for (Card* card: playerWithPriority()->creatures()) {
          if (!card->tapped && card->turnPlayed < turn_) {
-            attackableCreatureIds.push_back(card->id());
+            readyCreatures.push_back(card);
          }
       }
-      if (attackableCreatureIds.size() > 0) {
-         vector<int> combination;
+      if (readyCreatures.size() > 0) {
+         vector<int> attack;
          moves_ = moves;
-         for (int x=0;x<attackableCreatureIds.size()+1;x++) {
-            go(0, x, attackableCreatureIds, combination);
+         // create all possible attack moves for attack sizes between 0 and readyCreatures.size()
+         for (auto it = readyCreatures.begin(); it <= readyCreatures.end(); ++it) {
+            generateAttackMoves(readyCreatures.begin(), it, readyCreatures, attack);
          }
+         // printAttackMoves(moves_);
          moves = moves_;
          // put the move to attack with everything first
+         // todo: this seems to expect moves is empty when passed to addAttackMoves, so why is it being passed in at all?
          reverse(moves.begin(), moves.end());
       }
       return moves;
    }
 
-   static void pretty_print(const vector<int>& v) {
-     int count = 0;
-     for (int i = 0; i < v.size(); ++i) { cout << v[i] << " "; }
-     cout << "] " << endl;
-   }
-
-
-   void go(int offset, int k, vector<int>attackableCreatureIds, vector<int> combination) {
-      if (k == 0) {
-         Move *moveAttack = new Move(select_attackers, 0, playerWithPriority()->id());
-         moveAttack->attackerIds = combination;
-         if (combination.size() > 0) {
+   /*
+   */
+   void generateAttackMoves(vector<Card*>::iterator begin, vector<Card*>::iterator end, vector<Card*>&readyCreatures, vector<int>& attack) {
+      if (end == readyCreatures.begin()) {
+         if (attack.size() > 0) {
+            Move *moveAttack = new Move(select_attackers, 0, playerWithPriority()->id());
+            moveAttack->attackerIds = attack;
             moves_.push_back(moveAttack);
          }
-         // Game::pretty_print(combination);
          return;
       }
-      for (int i = offset; i <= attackableCreatureIds.size() - k; ++i) {
-         combination.push_back(attackableCreatureIds[i]);
-         go(i+1, k-1, attackableCreatureIds, combination);
-         combination.pop_back();
+      for (auto it = begin; it <= readyCreatures.end() - distance(readyCreatures.begin(), end); ++it) {
+         attack.push_back((*it)->id());
+         generateAttackMoves(it + 1, end - 1, readyCreatures, attack);
+         attack.pop_back();
       }
    }
+
    /*
      Add moves to this.moves_ for all ways attackers to be blocked. blockAssignments maps ids of attackers to 
      vectors of defender ids for which blocks have already been chosen. defenders specify defenders that 
@@ -178,15 +216,13 @@ class Game {
       1: 4 5 9
    */
    void groupDefenders(map<int, vector<int>>& blockAssignments, const vector<int>& defenders, vector<int>::iterator defendersIterator) {
-
       // don't include the move where all attackers are unblocked... that is covered by a "pass" move that gets added elsewhere
-      if (defendersIterator != defenders.begin()) {
+      if (defendersIterator - defenders.begin() != 0) {
          Move *moveDefend = new Move(select_defenders, 0, playerWithPriority()->id());
          moveDefend->blocks = blockAssignments;
          moves_.push_back(moveDefend);
       }
-
-      if(defendersIterator == defenders.end()) {
+      if(defenders.end() - defendersIterator <= 0) {
          return;
       }
       
@@ -216,10 +252,20 @@ class Game {
          defenders.push_back(defendingCreature->id());
       }
       vector<int>::iterator defenderIterator = defenders.begin();
-      groupDefenders(blockAssignments, defenders, defenderIterator);
+      groupDefenders(blockAssignments, defenders, defenders.begin());
       moves = moves_;
 
       return moves;
+   }
+
+   void printAttackMoves(vector<Move*>moves) {
+      for (Move* move: moves) {
+         cout << move->moveType << "\n";
+         for (int x : move->attackerIds) {
+            cout << x << " ";
+         }
+         cout << "\n";
+      }
    }
 
    void printBlockMoves(vector<Move*>moves) {
@@ -322,52 +368,7 @@ class Game {
 
    void playMove(Move* move) {
       if (move->moveType == pass) {
-         passPriority();
-         if(turnPlayer()->id() == playerWithPriority()->id()) {
-            if (playerWithPriority()->currentAttack()) {
-               playerWithPriority()->doUnblockedAttack(players_);
-            }
-
-            switch(gameStep) {
-               case untap_step:
-                  // no moves allowed during untap
-                  break;             
-               case upkeep_step:
-                  gameStep = draw_step;               
-                  break;             
-               case main_first:
-                  gameStep = attack_step;               
-                  break;             
-               case attack_step:
-                  gameStep = main_second;               
-                  break;             
-               case main_second:
-                  gameStep = end_step;               
-                  break;             
-               case draw_step:
-                  gameStep = draw_step;                   
-                  playerWithPriority()->drawCard();
-                  if (playerWithPriority()->didDrawFromEmptyLibrary()) {
-                     return;
-                  }
-                  gameStep = main_first;                   
-                  break;             
-               case end_step:
-                  if(turnPlayer()->hand().size() > 7) {
-                     turnPlayer()->discardDown();
-                  }
-                  printGameStatus();
-                  passPriority();
-                  turn_ += 1;                          
-                  cout << "\n~~~ START OF TURN " << turn_ << "  (" << turnPlayer()->username() << ") ~~~\n";
-                  gameStep = untap_step;                   
-                  turnPlayer()->resetLandsPlayedThisTurn();
-                  turnPlayer()->untapPermanents();
-                  gameStep = upkeep_step;     
-                  break;              
-            }
-         } else {
-         }
+         playPassMove_(move);
       } else {
          playerWithPriority()->playMove(move, players_, turn_);
          if (move->moveType == select_attackers) {            
@@ -377,6 +378,54 @@ class Game {
             passPriority();
             gameStep = main_second;               
          }
+      }
+   }
+
+   void playPassMove_(Move* move) {
+      passPriority();
+      if(turnPlayer()->id() != playerWithPriority()->id()) {
+         return;
+      }
+      if (playerWithPriority()->currentAttack()) {
+         playerWithPriority()->doUnblockedAttack(players_);
+      }
+      switch(gameStep) {
+         case untap_step:
+            // no moves allowed during untap
+            break;             
+         case upkeep_step:
+            gameStep = draw_step;               
+            break;             
+         case main_first:
+            gameStep = attack_step;               
+            break;             
+         case attack_step:
+            gameStep = main_second;               
+            break;             
+         case main_second:
+            gameStep = end_step;               
+            break;             
+         case draw_step:
+            gameStep = draw_step;                   
+            playerWithPriority()->drawCard();
+            if (playerWithPriority()->didDrawFromEmptyLibrary()) {
+               return;
+            }
+            gameStep = main_first;                   
+            break;             
+         case end_step:
+            if(turnPlayer()->hand().size() > 7) {
+               turnPlayer()->discardDown();
+            }
+            printGameStatus();
+            passPriority();
+            turn_ += 1;                          
+            cout << "\n~~~ START OF TURN " << turn_ << "  (" << turnPlayer()->username() << ") ~~~\n";
+            gameStep = untap_step;                   
+            turnPlayer()->resetLandsPlayedThisTurn();
+            turnPlayer()->untapPermanents();
+            gameStep = upkeep_step;     
+            break;              
       }
    }
 
@@ -404,10 +453,11 @@ int main() {
    game.makeDecks();
    game.drawOpeningHands();
 
-   int turnsToPlay = 5;
+   int turnsToPlay = 100;
    while (!game.isOver()) {
       game.playRandomMove();
       if (game.isOver()) {
+         game.printGameStatus();
          cout << "\n~~~~~~GAME OVER~~~~~~\n";
       }
       if (game.turn() >= turnsToPlay) {

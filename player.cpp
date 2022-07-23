@@ -142,95 +142,125 @@ void Player::doUnblockedAttack(vector<Player*>players) {
    currentAttack_ = 0;
 }
 
-void Player::playMove(Move* move, vector<Player*>players, int turn) {
+Player* Player::opponent_(vector<Player*>players) {
    Player *opponent = players[0];
    if (opponent->id() == id_) {
       opponent = players[1];
    }
-   if (move->moveType == select_attackers) {
-      for (Card *creature: creatures()) {
-         auto findIndex = find(move->attackerIds.begin(), move->attackerIds.end(), creature->id());
-         if (findIndex != move->attackerIds.end()) {
-            Card *attacker = creatures()[findIndex - move->attackerIds.begin()];
-            int power = attacker->power();
-            cout << username_ << " attacks for " << power << " with " << attacker->name() << " (" << attacker->id() << ").\n";
-            creatures()[findIndex - move->attackerIds.begin()]->tapped = true;
-         }
-      }
-      currentAttack_ = move;
-   }
+   return opponent;
+}
 
-   if (move->moveType == select_defenders) {
-      for (int aid:opponent->currentAttack()->attackerIds) {
-         Card *attacker;
-         for (Card* creature:opponent->creatures()) {
-            if (creature->id() == aid) {
-               attacker = creature;
+void Player::playMove(Move* move, vector<Player*>players, int turn) {
+   switch(move->moveType) {
+      case select_attackers:
+         playMoveSelectAttackers_(move, players, turn);
+         break;             
+      case select_defenders:
+         playMoveSelectDefenders_(move, players, turn);
+         break;             
+      case select_land:
+      case select_card:
+      case select_card_with_targets:
+         playMoveSelectHandCard_(move, players, turn);
+         break;             
+      case pass:
+         // this case is never called, all logic for the pass move is handled by the caller in alpha40.cpp
+         break;
+   }
+}
+
+void Player::playMoveSelectAttackers_(Move* move, vector<Player*>players, int turn) {
+   for (Card *creature: creatures()) {
+      auto findIndex = find(move->attackerIds.begin(), move->attackerIds.end(), creature->id());
+      if (findIndex != move->attackerIds.end()) {
+         Card *attacker = creatures()[findIndex - move->attackerIds.begin()];
+         int power = attacker->power();
+         cout << username_ << " attacks for " << power << " with " << attacker->name() << " (" << attacker->id() << ").\n";
+         creatures()[findIndex - move->attackerIds.begin()]->tapped = true;
+      }
+   }
+   currentAttack_ = move;
+}
+
+void Player::playMoveSelectDefenders_(Move* move, vector<Player*>players, int turn) {
+   for (int aid:opponent_(players)->currentAttack()->attackerIds) {
+      Card *attacker;
+      for (Card* creature:opponent_(players)->creatures()) {
+         if (creature->id() == aid) {
+            attacker = creature;
+         }
+      } 
+      if (move->blocks[aid].size() > 0) {
+
+         Card *defender = NULL;
+         for (Card* defendingCreature:creatures()) {
+            for(int defenderId:move->blocks[aid]) {
+               if (defendingCreature->id() == defenderId) {
+                  defender = defendingCreature;
+               }
             }
          } 
-         if (move->blocks.find(aid) != move->blocks.end()) {
-            Card *defender;
-            for (Card* creature:creatures()) {
-               for(int defenderId:move->blocks[aid]) {
-                  if (creature->id() == defenderId) {
-                     defender = creature;
-                  }
-               }
-            } 
-            cout << defender->name() << " blocks " << attacker->name() << ".\n";
-            defender->takeDamage(this, attacker->power());
-            attacker->takeDamage(opponent, defender->power());
-         } else {
-            decrementLife(attacker->power());
+         cout << defender->name() << " (" << defender->id() << ") blocks " << attacker->name() << ".\n";
+         defender->takeDamage(this, attacker->power());
+         if (defender->damage() >= defender->toughness()) {
+            this->bury(defender);
          }
-      }
-      opponent->setCurrentAttack(0);      
-   } else if (move->moveType == select_land || move->moveType == select_card || move->moveType == select_card_with_targets) {
-      int cardIndex = 0;
-      for(int x=0;x<hand_.size();x++) {
-         if (hand_[x]->id() == move->cardId) {
-            cardIndex = x;
-            break;
+         attacker->takeDamage(opponent_(players), defender->power());
+         if (attacker->damage() >= attacker->toughness()) {
+            opponent_(players)->bury(attacker);
          }
+      } else {
+         decrementLife(attacker->power());
       }
-      Card* card = hand_[cardIndex];
-      if (move->moveType == select_land || move->moveType == select_card) {
-         cout << username_ << " plays a " << card->name() << ".\n";
-         card->turnPlayed = turn;
-         inPlay_.push_back(card);
-         hand_.erase(hand_.begin() + cardIndex);
-         if (move->moveType == select_land) {
-            landsPlayedThisTurn_++;
-         }            
-         if (move->moveType == select_card) {
-            payMana(card->manaCost);
-         }
+   }
+   opponent_(players)->setCurrentAttack(0);      
+}
+
+void Player::playMoveSelectHandCard_(Move* move, vector<Player*>players, int turn) {
+   int cardIndex = 0;
+   for(int x=0;x<hand_.size();x++) {
+      if (hand_[x]->id() == move->cardId) {
+         cardIndex = x;
+         break;
       }
-      if (move->moveType == select_card_with_targets) {
-            map<mana_type, int> manaCost = card->manaCost;
-            for ( const auto &p : manaCost )
-            {
-               for (int x=0;x<p.second;x++) {
-                  for (Card* inPlayCard: inPlay_) {
-                     if (!inPlayCard->tapped && inPlayCard->cardType() == Land) {
-                        if ((inPlayCard->effects[0]->name == mana_red && p.first == red)
-                           || p.first == colorless) {
-                           inPlayCard->tapped = true;
-                        }
+   }
+   Card* card = hand_[cardIndex];
+   if (move->moveType == select_land || move->moveType == select_card) {
+      cout << username_ << " plays " << card->name() << ".\n";
+      card->turnPlayed = turn;
+      inPlay_.push_back(card);
+      hand_.erase(hand_.begin() + cardIndex);
+      if (move->moveType == select_land) {
+         landsPlayedThisTurn_++;
+      }            
+      if (move->moveType == select_card) {
+         payMana(card->manaCost);
+      }
+   }
+   if (move->moveType == select_card_with_targets) {
+         map<mana_type, int> manaCost = card->manaCost;
+         for ( const auto &p : manaCost )
+         {
+            for (int x=0;x<p.second;x++) {
+               for (Card* inPlayCard: inPlay_) {
+                  if (!inPlayCard->tapped && inPlayCard->cardType() == Land) {
+                     if ((inPlayCard->effects[0]->name == mana_red && p.first == red)
+                        || p.first == colorless) {
+                        inPlayCard->tapped = true;
                      }
-                  }   
+                  }
+               }   
 
-               } 
             } 
+         } 
 
-            for (Effect* effect: card->effects) {
-               if (effect->trigger == cast_this) {
-                  card->castSpellEffectDefs[0](move, card, effect, players);
-               }
+         for (Effect* effect: card->effects) {
+            if (effect->trigger == cast_this) {
+               card->castSpellEffectDefs[0](move, card, effect, players);
             }
-            graveyard_.push_back(card);
-            hand_.erase(hand_.begin() + cardIndex);
-      }
+         }
+         graveyard_.push_back(card);
+         hand_.erase(hand_.begin() + cardIndex);
    }
 }
 
@@ -239,7 +269,7 @@ Move* Player::currentAttack() {
 }
 
 void Player::setCurrentAttack(Move *move) {
-   currentAttack_ = move;;
+   currentAttack_ = move;
 }
 
 void Player::resetLandsPlayedThisTurn() {
@@ -251,7 +281,6 @@ void Player::untapPermanents() {
       inPlayCard->tapped = false;
   } 
 }
-
 
 bool Player::canAffordManaCost(map<mana_type, int> manaCost) {
    map<mana_type, int> manaAvailable;

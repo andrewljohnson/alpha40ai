@@ -18,6 +18,19 @@
         "initializer_list": "cpp",
         "queue": "cpp",
         "random": "cpp",
-        "utility": "cpp"
+        "utility": "cpp",
+        "iosfwd": "cpp",
+        "typeinfo": "cpp",
+        "__locale": "cpp",
+        "cwchar": "cpp",
+        "exception": "cpp",
+        "functional": "cpp",
+        "istream": "cpp",
+        "new": "cpp",
+        "ostream": "cpp",
+        "stdexcept": "cpp",
+        "streambuf": "cpp",
+        "tuple": "cpp",
+        "type_traits": "cpp"
     }
 }
