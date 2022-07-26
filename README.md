@@ -12,7 +12,6 @@ An AI to play Magic: The Gathering, focused on the Alpha 40 format.
  * implement instants before blockers
 
 later
- * test respond to yours/theirs lightning bolts
  * more cards
  * allow choosing discard EOT more than 7 cards instead of random
  * mulligan
