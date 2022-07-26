@@ -50,17 +50,18 @@ class Game {
    vector<Move*> addPlayPermanentMoves_(vector<Move*> moves);
    vector<Move*> addInstantMoves_(vector<Move*> moves);
    vector<Move*> addPassMove_(vector<Move*> moves);
-   vector<Move*> validMoves_();
    void passPriority_();
-   void playMove_(Move* move);
    void playPassMove_(Move* move);
-
+   void printDecks_();
 
    public:
 
    Game();
    vector<Player*> players();
+   vector<Move*> stackMove();
+   vector<Card*> stackCard();
    int turn();
+   game_step gameStep();
    void addPlayer(Player* p);
    void makeDecks();
    void drawOpeningHands();
@@ -68,6 +69,10 @@ class Game {
    void printValidMoves();
    void playRandomMove();
    bool isOver();
+   void addToStack(Move* move, Card* card);
+   void setDecks(vector<card_name> p1Deck, vector<card_name> p2Deck);
+   void playMove(Move* move);
+   vector<Move*> validMoves();
 };
 
 #endif

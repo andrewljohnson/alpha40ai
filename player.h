@@ -67,6 +67,7 @@ class Player {
    void playMove(Move* move, Game *game);
    void resetLandsPlayedThisTurn();
    void untapPermanents();
+   void resolveMove(Move* move, Card* card, Game* game);
 }; 
 
 

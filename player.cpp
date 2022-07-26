@@ -44,7 +44,6 @@ vector<Card*> Player::lands()  {
    return lands; 
 }
 
-
 void Player::decrementLife(int life) {
    life_ -= life;
 }
@@ -78,7 +77,6 @@ void Player::bury(Card *permanent) {
    }
    inPlay_.erase(inPlay_.begin() + cardIndex);
 }
-
 
 void Player::doUnblockedAttack(vector<Player*>players) {
    Player *opponent = players[0];
@@ -292,12 +290,13 @@ void Player::playMoveSelectHandCard_(Move* move, Game *game) {
          cout << username_ << " starts to play " << card->name() << ".\n";
          payMana_(card->manaCost);
          card->turnPlayed = game->turn();
-         inPlay_.push_back(card);
+         game->addToStack(move, card);
          hand_.erase(hand_.begin() + cardIndex);
       }
    }
    // todo: stack
    if (move->moveType == select_card_with_targets) {
+         cout << username_ << " starts to play " << card->name() << ".\n";
          map<mana_type, int> manaCost = card->manaCost;
          for ( const auto &p : manaCost )
          {
@@ -314,15 +313,24 @@ void Player::playMoveSelectHandCard_(Move* move, Game *game) {
             } 
          } 
 
-         for (Effect* effect: card->effects) {
-            if (effect->trigger == cast_this) {
-               card->castSpellEffectDefs[0](move, card, effect, game->players());
-            }
-         }
-         graveyard_.push_back(card);
+         game->addToStack(move, card);
          hand_.erase(hand_.begin() + cardIndex);
    }
 }
+
+void Player::resolveMove(Move* move, Card* card, Game* game) {
+   cout << username_ << " plays " << card->name() << ".\n";
+   if (move->moveType == select_card) {
+      inPlay_.push_back(card);
+   } else if (move->moveType == select_card_with_targets) {
+      for (Effect* effect: card->effects) {
+         if (effect->trigger == cast_this) {
+            card->castSpellEffectDefs[0](move, card, effect, game->players());
+         }
+      }
+      graveyard_.push_back(card);
+   }
+ }
 
 void Player::setCurrentAttack_(Move *move) {
    currentAttack_ = move;

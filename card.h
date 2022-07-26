@@ -59,6 +59,7 @@ class Card {
   vector<EffectDef> activatedEffectDefs; 
   vector<EffectDef> castSpellEffectDefs; 
 
+  static Card* cardForName(card_name name);
   static Card* grizzly_bear();
   static Card* lightning_bolt();
   static Card* forest();

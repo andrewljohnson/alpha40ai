@@ -96,6 +96,19 @@ void doDamageEffect(Move* m, Card* card, Effect* effect, vector<Player*>players)
    }
 }
 
+Card* Card::cardForName(card_name name) {
+   switch(name) {
+      case Mountain:
+         return Card::mountain();
+      case Forest:
+         return Card::forest();
+      case GrizzlyBear:
+         return Card::grizzly_bear();
+      case LightningBolt:
+         return Card::lightning_bolt();
+   }
+}
+
 Card* Card::mountain() {
    // make a card with one effect
    Card* m = new Card(Mountain, Land);

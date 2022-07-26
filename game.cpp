@@ -25,8 +25,20 @@ vector<Player*> Game::players() {
    return players_;
 }
 
+vector<Move*> Game::stackMove() {
+   return stackMove_;
+}
+
+vector<Card*> Game::stackCard() {
+   return stackCard_;
+}
+
 int Game::turn() {
    return turn_;
+}
+
+game_step Game::gameStep() {
+   return gameStep_;
 }
 
 void Game::addPlayer(Player* p) {
@@ -45,27 +57,28 @@ void Game::makeDecks() {
          addCard_(Card::mountain(), p1);
          addCard_(Card::mountain(), p2);
       } else if (x % 2 == 0) {
-         // addCard(Card::lightning_bolt(), p1);
-         // addCard(Card::lightning_bolt(), p2);            
+         addCard_(Card::lightning_bolt(), p1);
+         addCard_(Card::lightning_bolt(), p2);            
       } else if (x % 5 == 0) {
-         // addCard(Card::grizzly_bear(), p1);
-      } else {
          addCard_(Card::grizzly_bear(), p1);
+      } else {
+         // addCard_(Card::grizzly_bear(), p1);
          addCard_(Card::grizzly_bear(), p2);            
       }
    }
+   printDecks_();
+}
 
-   cout << "p1 deck: ";
-   for (int x=0; x<players_[0]->library().size(); x++) {
-      cout << players_[0]->library()[x]->name() << "(" << players_[0]->library()[x]->id() << ") ";
+void Game::setDecks(vector<card_name> p1Deck, vector<card_name> p2Deck) {
+   Player* p1 = players_[0];
+   Player* p2 = players_[1];
+   for(card_name cardName: p1Deck) {
+      addCard_(Card::cardForName(cardName), p1);
    }
-   cout <<"\n\n";
-
-   cout << "p2 deck: ";
-   for (int x=0; x<players_[1]->library().size(); x++) {
-      cout << players_[1]->library()[x]->name() << "(" << players_[1]->library()[x]->id() << ") ";
+   for(card_name cardName: p2Deck) {
+      addCard_(Card::cardForName(cardName), p2);
    }
-   cout <<"\n\n";
+   printDecks_();
 }
 
 void Game::drawOpeningHands() {
@@ -114,22 +127,22 @@ void Game::printGameStatus() {
          cout << "\n";
       }
    }
+   cout << "stack size: " << stackCard_.size() << endl;
 }
 
 void Game::printValidMoves() {
    cout << playerWithPriority_()->username() << "'s valid moves in " << gameStep_ << ": ";
-   for (Move* move: validMoves_()) {
-      cout << "(" << move->moveType << ", " << move->cardId << ", " << move->playerId << "), ";
+   for (Move* move: validMoves()) {
+      cout << "(" << move->moveType << ", " << move->cardId << ", " << move->playerId << ", " << move->targetId << "), ";
    }   
    cout << "\n";   
 }
 
 void Game::playRandomMove() {
-   vector<Move*> moves = validMoves_();
+   vector<Move*> moves = validMoves();
    // use arc4random() instead if we want to change the seed each run on Mac 
    // playMove(moves[rand() % moves. size()]);
-   // cout << moves[0]->playerId << " ABOUT TO PLAY MOVE " << moves[0]->moveType << " in step " << gameStep_ << endl;
-   playMove_(moves[0]);
+   playMove(moves[0]);
 }
 
 bool Game::isOver() {
@@ -140,6 +153,10 @@ bool Game::isOver() {
    return false;
 }
 
+void Game::addToStack(Move* move, Card* card) {
+   stackMove_.push_back(move);
+   stackCard_.push_back(card);
+}
 
 // private
 
@@ -351,17 +368,19 @@ vector<Move*> Game::addPassMove_(vector<Move*> moves) {
    return moves;
 }
 
-vector<Move*> Game::validMoves_() {
+vector<Move*> Game::validMoves() {
    vector<Move*> moves;
-   if (turnPlayer_()->id() == playerWithPriority_()->id()) {
-      if (gameStep_ == attack_step) {
-         moves = addAttackMoves_(moves);
-      } else if (gameStep_ == main_first || gameStep_ == main_second) {
-         moves = addPlayPermanentMoves_(moves);
-      }
-   } else {
-      if (gameStep_ == attack_step) {
-         moves = addDefenseMoves_(moves);
+   if (stackMove_.size() == 0) {
+      if (turnPlayer_()->id() == playerWithPriority_()->id()) {
+         if (gameStep_ == attack_step) {
+            moves = addAttackMoves_(moves);
+         } else if (gameStep_ == main_first || gameStep_ == main_second) {
+            moves = addPlayPermanentMoves_(moves);
+         }
+      } else {
+         if (gameStep_ == attack_step) {
+            moves = addDefenseMoves_(moves);
+         }
       }
    }
    moves = addInstantMoves_(moves);
@@ -375,10 +394,18 @@ void Game::passPriority_() {
    } else indexOfPlayerWithPriority_ = 0;      
 }
 
-void Game::playMove_(Move* move) {
+void Game::playMove(Move* move) {
+   for (Player* p: players_) {
+      if (p->id() == move->playerId) {
+         cout << p->username() << " plays move " << move->moveType << " in " << gameStep_ << endl;
+      }
+   }
    if (move->moveType == pass) {
       playPassMove_(move);
    } else {
+      for (Move* move:stackMove_) {
+         move->passCount = 0;
+      }
       playerWithPriority_()->playMove(move, this);
       if (move->moveType == select_attackers) {            
          passPriority_();
@@ -392,6 +419,22 @@ void Game::playMove_(Move* move) {
 
 void Game::playPassMove_(Move* move) {
    passPriority_();
+
+   if (stackMove_.size() > 0) {
+      if (stackMove_.back()->passCount < 2) {
+         stackMove_.back()->passCount++;
+      }
+      if (stackMove_.back()->passCount == 2) {
+         playerWithPriority_()->resolveMove(stackMove_.back(), stackCard_.back(), this);
+         stackMove_.pop_back();
+         stackCard_.pop_back();
+         if (playerWithPriority_()->id() != turnPlayer_()->id()) {
+            passPriority_();
+         }
+      }
+      return;
+   }
+
    if(turnPlayer_()->id() != playerWithPriority_()->id()) {
       return;
    }
@@ -436,4 +479,19 @@ void Game::playPassMove_(Move* move) {
          gameStep_ = upkeep_step;     
          break;              
    }
+}
+
+void Game::printDecks_() {
+   cout << "p1 deck: ";
+   for (int x=0; x<players_[0]->library().size(); x++) {
+      cout << players_[0]->library()[x]->name() << "(" << players_[0]->library()[x]->id() << ") ";
+   }
+   cout <<"\n\n";
+
+   cout << "p2 deck: ";
+   for (int x=0; x<players_[1]->library().size(); x++) {
+      cout << players_[1]->library()[x]->name() << "(" << players_[1]->library()[x]->id() << ") ";
+   }
+   cout <<"\n\n";
+
 }

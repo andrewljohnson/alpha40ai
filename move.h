@@ -12,12 +12,14 @@ class Move {
    int playerId;
    int cardId;
    int targetId;
+   int passCount;
    map<int, vector<int>> blocks;
    move_type moveType;
    target_type targetType;
    vector<int> attackerIds;
 
    Move(move_type mtype, int cid, int pid) {
+      passCount = 0;
       cardId = cid;
       moveType = mtype;
       playerId = pid;
